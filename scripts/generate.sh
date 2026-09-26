@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$ROOT/.tools/bin:$PATH"
 PI="${PI:-pi}"
-[[ "$("$PI" --version)" == "pi version ${PI_VERSION:-v0.3.2}" ]] || { echo 'Pi generator version mismatch' >&2; exit 1; }
+[[ "$("$PI" --version)" == "pi version ${PI_VERSION:-v0.4.0}" ]] || { echo 'Pi generator version mismatch' >&2; exit 1; }
 [[ "$(protoc --version)" == 'libprotoc 33.1' ]] || { echo 'protoc 33.1 required' >&2; exit 1; }
 [[ "$(protoc-gen-go --version)" == 'protoc-gen-go v1.28.0' ]] || exit 1
 [[ "$(protoc-gen-go-grpc --version)" == 'protoc-gen-go-grpc 1.2.0' ]] || exit 1

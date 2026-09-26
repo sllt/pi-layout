@@ -12,8 +12,7 @@ import (
 	"time"
 
 	"github.com/sllt/pi-layout/migrations"
-	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
-	"github.com/sllt/pi/pkg/pi/infra"
+	"github.com/sllt/pi/pkg/pi"
 	"github.com/sllt/pi/pkg/pi/logging"
 	"github.com/sllt/pi/pkg/pi/migration"
 )
@@ -133,16 +132,25 @@ func execute(ctx context.Context, o options, s *summary, stderr io.Writer) (err 
 		return fmt.Errorf("layout migrations require DB_DIALECT=sqlite; adapt the business DDL before using another dialect")
 	}
 	logger := logging.NewWriterLogger(logging.INFO, stderr, stderr)
-	db, err := piSQL.OpenContext(ctx, cfg, logger, nil)
+	values := cfg.Values()
+	values["HTTP_ENABLED"] = "false"
+	values["GRPC_ENABLED"] = "false"
+	values["METRICS_ENABLED"] = "false"
+	app, err := pi.Build(pi.WithConfig(values), pi.WithLogger(logger), pi.WithManagedSQL())
 	if err != nil {
 		return err
 	}
+	if err = app.Start(ctx); err != nil {
+		return err
+	}
 	defer func() {
-		if closeErr := db.Close(); closeErr != nil {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if closeErr := app.Stop(stopCtx); closeErr != nil {
 			err = errors.Join(err, fmt.Errorf("close migration database: %w", closeErr))
 		}
 	}()
-	c := &infra.Container{SQL: db, Logger: logger}
+	c := app.Container()
 	opts := []migration.Option{migration.WithTarget(o.target)}
 	switch o.command {
 	case "up":

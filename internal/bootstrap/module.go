@@ -17,6 +17,7 @@ var CoreModule = fx.Module("core",
 		NewLogger,
 		NewDB,
 	),
+	fx.Invoke(RegisterRuntime),
 )
 
 // RepositoryModule provides repository-layer dependencies.

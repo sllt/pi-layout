@@ -1,5 +1,15 @@
 # Pi Layout
 
+### v0.4.0 运行时装配
+
+`internal/bootstrap` 使用 `pi.Build` 和配置快照，Fx 构造期只分配稳定 SQL 句柄；Fx OnStart 激活数据库和 Pi，
+OnStop 释放资源。启动 Hook 的 deadline 不会取消长期 Worker，运行错误通过 Pi Wait 传给宿主。
+server 的 signal 由命令入口管理，task 由 Fx 管理；迁移命令使用相同 Build/Owned SQL 清理契约，禁用全部监听器。
+默认指标监听关闭，按需在 bootstrap 显式配置每个 App 的 exporter 和 handler。
+
+Handler 测试使用公开 `pkg/pi/testkit`，可直接调用 Handler 或完整路由，无需端口或私有字段。
+旧 `pi.New()` 仍可使用，但新的业务装配统一走 Build；不要重新在 provider 中调用 NewSQL 或自行重复 Close。
+
 基于 [Pi](https://github.com/sllt/pi) 框架的企业级 Go 应用脚手架（项目骨架）。
 
 项目由 `kite-layout` 更名而来，框架版本固定在 `go.mod`。普通项目无需本地框架源码：
