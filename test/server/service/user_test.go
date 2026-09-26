@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/sllt/kite-layout/internal/model"
-	"github.com/sllt/kite-layout/internal/service"
-	"github.com/sllt/kite-layout/internal/types"
-	"github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite-layout/pkg/sid"
-	"github.com/sllt/kite-layout/test/mocks/repository"
-	"github.com/sllt/kite/pkg/kite/logging"
+	"github.com/sllt/pi-layout/internal/model"
+	"github.com/sllt/pi-layout/internal/service"
+	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi-layout/pkg/sid"
+	"github.com/sllt/pi-layout/test/mocks/repository"
+	"github.com/sllt/pi/pkg/pi/logging"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 	os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing")
 
 	logger = log.NewLogger(logging.NewLogger(logging.INFO))
-	j = jwt.NewJwt(nil) // Pass nil since we don't need kite.App in tests
+	j = jwt.NewJwt(nil) // Pass nil since we don't need pi.App in tests
 	sf = sid.NewSid()
 
 	code := m.Run()

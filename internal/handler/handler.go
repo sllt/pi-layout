@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	"github.com/sllt/kite-layout/internal/middleware"
-	"github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/log"
+	"github.com/sllt/pi-layout/internal/middleware"
+	"github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/log"
 )
 
 type Handler struct {

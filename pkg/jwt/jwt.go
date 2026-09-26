@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi/pkg/pi"
 )
 
 type JWT struct {
@@ -20,8 +20,8 @@ type MyCustomClaims struct {
 }
 
 // NewJwt creates a JWT instance.
-// Takes *kite.App to ensure Kite loads .env before JWT reads JWT_SECRET.
-func NewJwt(_ *kite.App) *JWT {
+// Takes *pi.App to ensure Pi loads .env before JWT reads JWT_SECRET.
+func NewJwt(_ *pi.App) *JWT {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		panic("JWT_SECRET environment variable is required")

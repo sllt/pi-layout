@@ -1,10 +1,10 @@
 package handler
 
 import (
-	v1 "github.com/sllt/kite-layout/api/v1"
-	"github.com/sllt/kite-layout/internal/service"
-	"github.com/sllt/kite-layout/internal/types"
-	"github.com/sllt/kite/pkg/kite"
+	v1 "github.com/sllt/pi-layout/api/v1"
+	"github.com/sllt/pi-layout/internal/service"
+	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi/pkg/pi"
 )
 
 type UserHandler struct {
@@ -29,7 +29,7 @@ func NewUserHandler(handler *Handler, userService service.UserService) *UserHand
 // @Param request body v1.RegisterRequest true "params"
 // @Success 200 {object} errcode.Response
 // @Router /register [post]
-func (h *UserHandler) Register(ctx *kite.Context) (any, error) {
+func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 	req := new(v1.RegisterRequest)
 	if err := ctx.Bind(req); err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (h *UserHandler) Register(ctx *kite.Context) (any, error) {
 // @Param request body v1.LoginRequest true "params"
 // @Success 200 {object} errcode.Response{data=v1.LoginResponseData}
 // @Router /login [post]
-func (h *UserHandler) Login(ctx *kite.Context) (any, error) {
+func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 	var req v1.LoginRequest
 	if err := ctx.Bind(&req); err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (h *UserHandler) Login(ctx *kite.Context) (any, error) {
 // @Security Bearer
 // @Success 200 {object} errcode.Response{data=v1.GetProfileResponseData}
 // @Router /user [get]
-func (h *UserHandler) GetProfile(ctx *kite.Context) (any, error) {
+func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
 
 	output, err := h.userService.GetProfile(ctx, userId)
@@ -114,7 +114,7 @@ func (h *UserHandler) GetProfile(ctx *kite.Context) (any, error) {
 // @Param request body v1.UpdateProfileRequest true "params"
 // @Success 200 {object} errcode.Response
 // @Router /user [put]
-func (h *UserHandler) UpdateProfile(ctx *kite.Context) (any, error) {
+func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
 
 	var req v1.UpdateProfileRequest

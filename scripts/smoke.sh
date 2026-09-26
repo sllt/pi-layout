@@ -6,8 +6,8 @@ cd "$ROOT_DIR"
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
 START_TIMEOUT_SECONDS="${START_TIMEOUT_SECONDS:-20}"
-SERVER_LOG="${SERVER_LOG:-/tmp/kite-server-smoke.log}"
-MIGRATION_LOG="${MIGRATION_LOG:-/tmp/kite-migration-smoke.log}"
+SERVER_LOG="${SERVER_LOG:-/tmp/pi-server-smoke.log}"
+MIGRATION_LOG="${MIGRATION_LOG:-/tmp/pi-migration-smoke.log}"
 
 USE_EXISTING_SERVER="${USE_EXISTING_SERVER:-0}"
 SKIP_MIGRATION="${SKIP_MIGRATION:-0}"
@@ -113,7 +113,7 @@ fi
 
 wait_server_ready
 
-EMAIL="kite_smoke_$(date +%s)@example.com"
+EMAIL="pi_smoke_$(date +%s)@example.com"
 PASSWORD="pass123456"
 
 request POST /api/v1/register "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}"
@@ -130,7 +130,7 @@ fi
 request GET /api/v1/user "" "$TOKEN"
 assert_status "$RESP_STATUS" 200
 
-request PUT /api/v1/user "{\"nickname\":\"kite-smoke\",\"email\":\"$EMAIL\"}" "$TOKEN"
+request PUT /api/v1/user "{\"nickname\":\"pi-smoke\",\"email\":\"$EMAIL\"}" "$TOKEN"
 assert_status "$RESP_STATUS" 200
 
 request GET /api/v1/user "" "$TOKEN"

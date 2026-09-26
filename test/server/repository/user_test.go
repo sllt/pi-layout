@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/sllt/kite-layout/internal/model"
-	"github.com/sllt/kite-layout/internal/repository"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite/pkg/kite/datasource"
-	kiteSQL "github.com/sllt/kite/pkg/kite/datasource/sql"
+	"github.com/sllt/pi-layout/internal/model"
+	"github.com/sllt/pi-layout/internal/repository"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi/datasource"
+	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ type testDB struct {
 	*sql.DB
 }
 
-func (t *testDB) Begin() (*kiteSQL.Tx, error) {
+func (t *testDB) Begin() (*piSQL.Tx, error) {
 	return nil, errors.New("not implemented in test")
 }
 

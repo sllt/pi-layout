@@ -2,7 +2,7 @@ package task
 
 import (
 	"context"
-	"github.com/sllt/kite-layout/internal/repository"
+	"github.com/sllt/pi-layout/internal/repository"
 )
 
 type UserTask interface {

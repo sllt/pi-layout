@@ -1,8 +1,8 @@
 package errcode
 
 // Error represents a structured application error with business code and HTTP status.
-// It implements kite's StatusCodeResponder and CodeResponder interfaces,
-// so kite automatically renders the correct HTTP status and JSON response.
+// It implements pi's StatusCodeResponder and CodeResponder interfaces,
+// so pi automatically renders the correct HTTP status and JSON response.
 type Error struct {
 	BizCode int
 	Message string
@@ -19,7 +19,7 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
-// Code implements kite's http.CodeResponder interface.
+// Code implements pi's http.CodeResponder interface.
 // Returns the business error code for the JSON response "code" field.
 func (e *Error) Code() int {
 	return e.BizCode

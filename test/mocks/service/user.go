@@ -9,7 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/sllt/kite-layout/internal/types"
+	types "github.com/sllt/pi-layout/internal/types"
 )
 
 // MockUserService is a mock of UserService interface.

@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/sllt/kite-layout/internal/repository"
-	"github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite-layout/pkg/sid"
+	"github.com/sllt/pi-layout/internal/repository"
+	"github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi-layout/pkg/sid"
 )
 
 type Service struct {

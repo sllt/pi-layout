@@ -1,6 +1,6 @@
 # 业务模块开发约定
 
-本文以当前 `user` 模块为蓝本，说明在 kite-layout 中新增业务模块时推荐遵循的分层方式。
+本文以当前 `user` 模块为蓝本，说明在 pi-layout 中新增业务模块时推荐遵循的分层方式。
 
 ## 分层职责
 
@@ -11,7 +11,7 @@
 | Model | `internal/model` | 数据库存储结构，字段用 `db` tag 对齐表字段。 |
 | Repository | `internal/repository` | 数据访问接口与实现，只处理 SQL、事务上下文和存储错误。 |
 | Service | `internal/service` | 业务编排、事务边界、错误码映射、跨 Repository 协作。 |
-| Handler | `internal/handler` | `kite.Context` 绑定参数，调用 Service，并把 output 转回 API DTO。 |
+| Handler | `internal/handler` | `pi.Context` 绑定参数，调用 Service，并把 output 转回 API DTO。 |
 | Router | `internal/router` | 注册路由、路由分组和鉴权中间件。 |
 | Migration | `migrations` | 建表、索引、唯一约束等数据库结构变更。 |
 | Tests | `test/server/*` | Repository / Service / Handler 分层测试样板。 |

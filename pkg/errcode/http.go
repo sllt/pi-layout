@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	kiteHTTP "github.com/sllt/kite/pkg/kite/http"
+	piHTTP "github.com/sllt/pi/pkg/pi/http"
 )
 
 // AsError normalizes arbitrary errors into layout's public error contract.
@@ -25,17 +25,17 @@ func AsError(err error) *Error {
 	return ErrInternalServerError
 }
 
-// WriteHTTPError renders the same response envelope that Kite handlers use:
+// WriteHTTPError renders the same response envelope that Pi handlers use:
 //
 //	{"code": <business-code>, "data": null, "message": "..."}
 //
 // Use this helper in net/http middleware, where errors cannot be returned to
-// Kite's normal handler responder.
+// Pi's normal handler responder.
 func WriteHTTPError(w http.ResponseWriter, r *http.Request, err error) {
 	method := http.MethodGet
 	if r != nil {
 		method = r.Method
 	}
 
-	kiteHTTP.NewResponder(w, method).Respond(nil, AsError(err))
+	piHTTP.NewResponder(w, method).Respond(nil, AsError(err))
 }

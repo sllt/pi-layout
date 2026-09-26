@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron"
-	"github.com/sllt/kite-layout/internal/task"
-	"github.com/sllt/kite-layout/pkg/log"
+	"github.com/sllt/pi-layout/internal/task"
+	"github.com/sllt/pi-layout/pkg/log"
 	"go.uber.org/fx"
 )
 

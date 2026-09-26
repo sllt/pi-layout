@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sllt/kite-layout/internal/model"
-	"github.com/sllt/kite-layout/internal/repository"
-	"github.com/sllt/kite-layout/internal/types"
-	"github.com/sllt/kite-layout/pkg/errcode"
+	"github.com/sllt/pi-layout/internal/model"
+	"github.com/sllt/pi-layout/internal/repository"
+	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi-layout/pkg/errcode"
 	"golang.org/x/crypto/bcrypt"
 )
 

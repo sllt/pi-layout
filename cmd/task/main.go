@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sllt/kite-layout/internal/bootstrap"
-	"github.com/sllt/kite-layout/internal/server"
+	"github.com/sllt/pi-layout/internal/bootstrap"
+	"github.com/sllt/pi-layout/internal/server"
 	"go.uber.org/fx"
 )
 

@@ -7,3 +7,7 @@ deploy/docker-compose/data
 configs/.env
 .mcp.json
 .omc/
+
+# Local development workspace; release dependencies belong in go.mod.
+go.work
+go.work.sum

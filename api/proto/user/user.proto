@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package user;
 
-option go_package = "github.com/sllt/kite-layout/internal/grpc/user";
+option go_package = "github.com/sllt/pi-layout/internal/grpc/user";
 
 service UserService {
   rpc Register (RegisterRequest) returns (RegisterResponse) {}

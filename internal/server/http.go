@@ -1,17 +1,12 @@
 package server
 
 import (
-	"github.com/sllt/kite-layout/internal/grpc/user"
-	"github.com/sllt/kite-layout/internal/middleware"
-	"github.com/sllt/kite-layout/internal/router"
-	"github.com/sllt/kite-layout/internal/service"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi-layout/internal/middleware"
+	"github.com/sllt/pi-layout/internal/router"
+	"github.com/sllt/pi/pkg/pi"
 )
 
-func NewHTTPServer(
-	deps router.RouterDeps,
-	userService service.UserService,
-) {
+func NewHTTPServer(deps router.RouterDeps) {
 	app := deps.App
 
 	// Register global middleware
@@ -19,21 +14,20 @@ func NewHTTPServer(
 		middleware.CORSMiddleware(),
 		// NoStrictAuth runs globally: extracts JWT claims into context when token is present,
 		// but does not reject requests without a token. Strict routes are enforced by
-		// group-scoped Kite middleware in internal/router.
+		// group-scoped Pi middleware in internal/router.
 		middleware.NoStrictAuth(deps.JWT, deps.Logger),
 	)
 
 	// Root route
-	app.GET("/", func(ctx *kite.Context) (any, error) {
+	app.GET("/", func(ctx *pi.Context) (any, error) {
 		return map[string]any{
-			":)": "Thank you for using kite!",
+			":)": "Thank you for using pi!",
 		}, nil
 	})
 
 	// Register user routes (HTTP)
 	router.InitUserRouter(deps)
 
-	// Register gRPC services
-	userKiteServer := user.NewUserServiceKiteServerWithService(userService)
-	user.RegisterUserServiceServerWithKite(app, userKiteServer)
+	// The gRPC user example remains unregistered until it enforces verified
+	// identity, resource authorization and the same validation as HTTP.
 }

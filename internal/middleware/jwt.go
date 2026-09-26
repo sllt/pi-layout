@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/sllt/kite-layout/pkg/errcode"
-	"github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/log"
+	"github.com/sllt/pi-layout/pkg/errcode"
+	"github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/log"
 )
 
 type contextKey string

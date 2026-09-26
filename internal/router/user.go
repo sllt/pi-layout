@@ -1,14 +1,14 @@
 package router
 
 import (
-	"github.com/sllt/kite-layout/internal/handler"
-	"github.com/sllt/kite-layout/pkg/errcode"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi-layout/internal/handler"
+	"github.com/sllt/pi-layout/pkg/errcode"
+	"github.com/sllt/pi/pkg/pi"
 )
 
-func requireAuthMiddleware() kite.KiteMiddleware {
-	return func(next kite.Handler) kite.Handler {
-		return func(ctx *kite.Context) (any, error) {
+func requireAuthMiddleware() pi.PiMiddleware {
+	return func(next pi.Handler) pi.Handler {
+		return func(ctx *pi.Context) (any, error) {
 			if handler.GetUserIdFromCtx(ctx) == "" {
 				return nil, errcode.ErrUnauthorized
 			}
@@ -17,10 +17,10 @@ func requireAuthMiddleware() kite.KiteMiddleware {
 	}
 }
 
-// InitUserRouter registers user routes on the Kite app.
+// InitUserRouter registers user routes on the Pi app.
 // Token parsing is handled globally via NoStrictAuth middleware (which sets claims
 // when a token is present but doesn't reject requests without one).
-// Protected routes use a group-scoped Kite middleware for strict auth.
+// Protected routes use a group-scoped Pi middleware for strict auth.
 func InitUserRouter(deps RouterDeps) {
 	apiV1 := deps.App.Group("/api/v1")
 

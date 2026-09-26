@@ -1,6 +1,6 @@
 # 错误码与响应约定
 
-kite-layout 使用 `pkg/errcode` 描述业务错误。`errcode.Error` 实现了 Kite 的 `Code()` 和 `StatusCode()` 接口，因此 Handler / Service 返回该错误时，Kite 会自动渲染统一响应。
+pi-layout 使用 `pkg/errcode` 描述业务错误。`errcode.Error` 实现了 Pi 的 `Code()` 和 `StatusCode()` 接口，因此 Handler / Service 返回该错误时，Pi 会自动渲染统一响应。
 
 ## HTTP 响应 envelope
 
@@ -32,7 +32,7 @@ kite-layout 使用 `pkg/errcode` 描述业务错误。`errcode.Error` 实现了 
 
 - Repository 返回底层存储错误或明确的 not found 错误，不负责写 HTTP 响应。
 - Service 将业务场景映射为 `pkg/errcode`，例如邮箱重复返回 `ErrEmailAlreadyUse`。
-- Handler 只做参数绑定和 DTO 转换，业务错误直接返回给 Kite responder。
+- Handler 只做参数绑定和 DTO 转换，业务错误直接返回给 Pi responder。
 - `net/http` middleware 不能直接返回 error，应使用 `errcode.WriteHTTPError`，避免手写 JSON envelope。
 - 未知错误不应直接暴露给调用方；`errcode.AsError` 会把未知错误转为 `ErrInternalServerError`。
 
@@ -57,4 +57,4 @@ json.NewEncoder(w).Encode(map[string]any{
 
 ## 未来对齐方向
 
-gRPC 目前仍直接返回 error。后续如果 Kite 框架提供 unified error model，layout 的 `pkg/errcode` 应作为适配层对齐 HTTP / gRPC / CLI 的错误语义。
+gRPC 目前仍直接返回 error。后续如果 Pi 框架提供 unified error model，layout 的 `pkg/errcode` 应作为适配层对齐 HTTP / gRPC / CLI 的错误语义。

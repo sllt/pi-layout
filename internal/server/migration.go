@@ -3,13 +3,13 @@ package server
 import (
 	"context"
 
-	"github.com/sllt/kite-layout/migrations"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi-layout/migrations"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi"
 	"go.uber.org/fx"
 )
 
-func RegisterMigrateServer(lc fx.Lifecycle, shutdowner fx.Shutdowner, app *kite.App, log *log.Logger) {
+func RegisterMigrateServer(lc fx.Lifecycle, shutdowner fx.Shutdowner, app *pi.App, log *log.Logger) {
 	lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			app.Migrate(migrations.All())

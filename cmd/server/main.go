@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sllt/kite-layout/internal/bootstrap"
-	"github.com/sllt/kite-layout/internal/server"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi-layout/internal/bootstrap"
+	"github.com/sllt/pi-layout/internal/server"
+	"github.com/sllt/pi/pkg/pi"
 	"go.uber.org/fx"
 )
 
@@ -28,9 +28,9 @@ func stopFXApp(app fxStopper, timeout time.Duration) error {
 	return app.Stop(stopCtx)
 }
 
-// @title           Kite Example API
+// @title           Pi Example API
 // @version         1.0.0
-// @description     Example API server built with Kite framework.
+// @description     Example API server built with Pi framework.
 // @termsOfService  http://swagger.io/terms/
 // @contact.name   API Support
 // @contact.url    http://www.swagger.io/support
@@ -57,7 +57,7 @@ func run() error {
 }
 
 func runWithContext(ctx context.Context) (err error) {
-	var kiteApp *kite.App
+	var piApp *pi.App
 
 	fxApp := fx.New(
 		bootstrap.CoreModule,
@@ -66,7 +66,7 @@ func runWithContext(ctx context.Context) (err error) {
 		bootstrap.ServiceModule,
 		bootstrap.HandlerModule,
 		fx.Invoke(server.NewHTTPServer),
-		fx.Populate(&kiteApp),
+		fx.Populate(&piApp),
 	)
 
 	startCtx, cancel := context.WithTimeout(context.Background(), fxLifecycleTimeout)
@@ -81,9 +81,9 @@ func runWithContext(ctx context.Context) (err error) {
 		}
 	}()
 
-	if kiteApp == nil {
-		return errors.New("kite app was not populated")
+	if piApp == nil {
+		return errors.New("pi app was not populated")
 	}
 
-	return kiteApp.RunContext(ctx)
+	return piApp.RunContext(ctx)
 }

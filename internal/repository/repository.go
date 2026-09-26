@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sllt/kite-layout/pkg/log"
-	kiteSQL "github.com/sllt/kite/pkg/kite/datasource/sql"
-	"github.com/sllt/kite/pkg/kite/infra"
+	"github.com/sllt/pi-layout/pkg/log"
+	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
+	"github.com/sllt/pi/pkg/pi/infra"
 )
 
 // txKey is a typed context key to avoid collisions with other packages.
@@ -33,8 +33,8 @@ func NewTransaction(r *Repository) Transaction {
 }
 
 // GetQuerier returns the transaction from context if available, otherwise the DB.
-func (r *Repository) GetQuerier(ctx context.Context) kiteSQL.Executor {
-	if tx, ok := ctx.Value(txKey{}).(*kiteSQL.Tx); ok {
+func (r *Repository) GetQuerier(ctx context.Context) piSQL.Executor {
+	if tx, ok := ctx.Value(txKey{}).(*piSQL.Tx); ok {
 		return tx
 	}
 	return r.db
@@ -44,7 +44,7 @@ func (r *Repository) GetQuerier(ctx context.Context) kiteSQL.Executor {
 // If ctx already carries a transaction, fn runs in that existing transaction (no nesting).
 func (r *Repository) Transaction(ctx context.Context, fn func(ctx context.Context) error) (err error) {
 	// Reuse existing transaction — avoids partial-commit on nested calls.
-	if _, ok := ctx.Value(txKey{}).(*kiteSQL.Tx); ok {
+	if _, ok := ctx.Value(txKey{}).(*piSQL.Tx); ok {
 		return fn(ctx)
 	}
 

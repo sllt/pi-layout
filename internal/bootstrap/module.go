@@ -1,19 +1,19 @@
 package bootstrap
 
 import (
-	"github.com/sllt/kite-layout/internal/handler"
-	"github.com/sllt/kite-layout/internal/repository"
-	"github.com/sllt/kite-layout/internal/service"
-	"github.com/sllt/kite-layout/internal/task"
-	"github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/sid"
+	"github.com/sllt/pi-layout/internal/handler"
+	"github.com/sllt/pi-layout/internal/repository"
+	"github.com/sllt/pi-layout/internal/service"
+	"github.com/sllt/pi-layout/internal/task"
+	"github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/sid"
 	"go.uber.org/fx"
 )
 
 // CoreModule provides app/container level dependencies shared by all entry points.
 var CoreModule = fx.Module("core",
 	fx.Provide(
-		NewKiteApp,
+		NewPiApp,
 		NewLogger,
 		NewDB,
 	),

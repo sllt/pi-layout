@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/duke-git/lancet/v2/cryptor"
-	"github.com/sllt/kite-layout/pkg/errcode"
+	"github.com/sllt/pi-layout/pkg/errcode"
 )
 
 func TestSignMiddleware_MissingHeaderUsesUnifiedErrorResponse(t *testing.T) {

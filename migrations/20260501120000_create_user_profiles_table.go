@@ -1,6 +1,6 @@
 package migrations
 
-import "github.com/sllt/kite/pkg/kite/migration"
+import "github.com/sllt/pi/pkg/pi/migration"
 
 const createUserProfilesTable = `CREATE TABLE IF NOT EXISTS user_profiles (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,

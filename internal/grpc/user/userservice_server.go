@@ -1,36 +1,33 @@
 // versions:
-// 	kite-cli v0.1.0
-// 	kite v0.1.0
+// 	pi-cli v0.1.0
+// 	pi v0.1.0
 // 	source: user.proto
 
 package user
 
 import (
-	"github.com/sllt/kite-layout/internal/service"
-	"github.com/sllt/kite-layout/internal/types"
-	"github.com/sllt/kite/pkg/kite"
+	"github.com/sllt/pi-layout/internal/service"
+	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi/pkg/pi"
 )
 
-// Register the gRPC service in your app using the following code in your main.go:
-//
-// user.RegisterUserServiceServerWithKite(app, user.NewUserServiceKiteServer(userService))
-//
-// UserServiceKiteServer defines the gRPC server implementation.
-
-type UserServiceKiteServer struct {
+// UserServicePiServer defines the gRPC server implementation.
+// This example is deliberately unregistered: profile methods currently trust
+// request user IDs. See README.md for the requirements before enabling it.
+type UserServicePiServer struct {
 	health      *healthServer
 	userService service.UserService
 }
 
-// NewUserServiceKiteServerWithService creates a new instance with service dependency
-func NewUserServiceKiteServerWithService(userService service.UserService) *UserServiceKiteServer {
-	return &UserServiceKiteServer{
+// NewUserServicePiServerWithService creates a new instance with service dependency
+func NewUserServicePiServerWithService(userService service.UserService) *UserServicePiServer {
+	return &UserServicePiServer{
 		health:      getOrCreateHealthServer(),
 		userService: userService,
 	}
 }
 
-func (s *UserServiceKiteServer) Register(ctx *kite.Context) (any, error) {
+func (s *UserServicePiServer) Register(ctx *pi.Context) (any, error) {
 	// 获取 protobuf 请求
 	reqWrapper := ctx.Request.(*RegisterRequestWrapper)
 	req := reqWrapper.RegisterRequest
@@ -48,7 +45,7 @@ func (s *UserServiceKiteServer) Register(ctx *kite.Context) (any, error) {
 	return &RegisterResponse{}, nil
 }
 
-func (s *UserServiceKiteServer) Login(ctx *kite.Context) (any, error) {
+func (s *UserServicePiServer) Login(ctx *pi.Context) (any, error) {
 	reqWrapper := ctx.Request.(*LoginRequestWrapper)
 	req := reqWrapper.LoginRequest
 
@@ -69,7 +66,7 @@ func (s *UserServiceKiteServer) Login(ctx *kite.Context) (any, error) {
 	}, nil
 }
 
-func (s *UserServiceKiteServer) GetProfile(ctx *kite.Context) (any, error) {
+func (s *UserServicePiServer) GetProfile(ctx *pi.Context) (any, error) {
 	reqWrapper := ctx.Request.(*GetProfileRequestWrapper)
 	req := reqWrapper.GetProfileRequest
 
@@ -85,7 +82,7 @@ func (s *UserServiceKiteServer) GetProfile(ctx *kite.Context) (any, error) {
 	}, nil
 }
 
-func (s *UserServiceKiteServer) UpdateProfile(ctx *kite.Context) (any, error) {
+func (s *UserServicePiServer) UpdateProfile(ctx *pi.Context) (any, error) {
 	reqWrapper := ctx.Request.(*UpdateProfileRequestWrapper)
 	req := reqWrapper.UpdateProfileRequest
 

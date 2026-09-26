@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/cryptor"
-	"github.com/sllt/kite-layout/pkg/errcode"
-	"github.com/sllt/kite-layout/pkg/log"
+	"github.com/sllt/pi-layout/pkg/errcode"
+	"github.com/sllt/pi-layout/pkg/log"
 )
 
 func SignMiddleware(logger *log.Logger) func(http.Handler) http.Handler {

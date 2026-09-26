@@ -1,22 +1,22 @@
 package bootstrap
 
 import (
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite/pkg/kite"
-	"github.com/sllt/kite/pkg/kite/infra"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi"
+	"github.com/sllt/pi/pkg/pi/infra"
 )
 
-// NewKiteApp creates a new kite.App.
-func NewKiteApp() *kite.App {
-	return kite.New()
+// NewPiApp creates a new pi.App.
+func NewPiApp() *pi.App {
+	return pi.New()
 }
 
-// NewLogger extracts kite's logger from the container and wraps it.
-func NewLogger(app *kite.App) *log.Logger {
+// NewLogger extracts pi's logger from the container and wraps it.
+func NewLogger(app *pi.App) *log.Logger {
 	return log.NewLogger(app.Container().Logger)
 }
 
-// NewDB extracts infra.DB from the kite app's container.
-func NewDB(app *kite.App) infra.DB {
+// NewDB extracts infra.DB from the pi app's container.
+func NewDB(app *pi.App) infra.DB {
 	return app.Container().SQL
 }

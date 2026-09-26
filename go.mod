@@ -1,4 +1,4 @@
-module github.com/sllt/kite-layout
+module github.com/sllt/pi-layout
 
 go 1.24.10
 
@@ -8,7 +8,7 @@ require (
 	github.com/go-co-op/gocron v1.37.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang/mock v1.6.0
-	github.com/sllt/kite v0.2.3
+	github.com/sllt/pi v0.2.4
 	github.com/sony/sonyflake v1.3.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/fx v1.24.0

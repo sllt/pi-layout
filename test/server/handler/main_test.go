@@ -2,10 +2,10 @@ package handler
 
 import (
 	"fmt"
-	"github.com/sllt/kite-layout/internal/handler"
-	jwt2 "github.com/sllt/kite-layout/pkg/jwt"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite/pkg/kite/logging"
+	"github.com/sllt/pi-layout/internal/handler"
+	jwt2 "github.com/sllt/pi-layout/pkg/jwt"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi/logging"
 	"os"
 	"testing"
 	"time"
@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 
 	logger = log.NewLogger(logging.NewLogger(logging.INFO))
 	hdl = handler.NewHandler(logger)
-	jwt = jwt2.NewJwt(nil) // Pass nil since we don't need kite.App in tests
+	jwt = jwt2.NewJwt(nil) // Pass nil since we don't need pi.App in tests
 
 	code := m.Run()
 	fmt.Println("test end")

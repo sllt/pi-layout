@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sllt/kite-layout/pkg/errcode"
-	"github.com/sllt/kite-layout/pkg/log"
-	"github.com/sllt/kite/pkg/kite/logging"
+	"github.com/sllt/pi-layout/pkg/errcode"
+	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi/logging"
 )
 
 func testLogger() *log.Logger {
