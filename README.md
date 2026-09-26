@@ -2,10 +2,14 @@
 
 基于 [Pi](https://github.com/sllt/pi) 框架的企业级 Go 应用脚手架（项目骨架）。
 
-项目由 `kite-layout` 更名而来。本隔离候选固定依赖 `github.com/sllt/pi v0.2.4`，
-不使用 go.work 或 replace；验收通过本地 module proxy 获取候选归档并生成校验和。
-该版本尚未推送或打 tag，公开下载需等待框架与脚手架的配套发布。
-候选保留旧 Migration API；主开发工作区的 Migration v2 属于 v0.3.0。
+项目由 `kite-layout` 更名而来，使用已发布的 `github.com/sllt/pi v0.3.0`。普通项目无需本地框架源码：
+
+```sh
+GOWORK=off go mod download
+GOWORK=off go build ./...
+```
+
+开发框架本身时可自行使用忽略提交的 go.work；发布验收使用 `GOWORK=off`。
 
 ## 特性
 
@@ -26,7 +30,7 @@
 - `internal/service`：业务逻辑层
 - `internal/repository`：数据访问层
 - `internal/router`：路由与鉴权包装
-- `internal/server`：HTTP / migration / task 的运行时注册
+- `internal/server`：HTTP / task 的运行时注册；`internal/migrationcmd`：一次性迁移命令
 - `internal/bootstrap`：Fx modules 与基础构造函数
 - `docs/architecture`：架构与业务模块开发约定
 - `pkg/config`：环境配置约定
@@ -52,8 +56,19 @@ make init
 ### 3) 执行数据库迁移
 
 ```bash
-go run ./cmd/migration
+go run ./cmd/migration plan
+go run ./cmd/migration up --timeout=10m --lock-ttl=15m
+go run ./cmd/migration status
 ```
+
+`up` 是默认子命令，默认开启迁移锁；显式 `--lock=false` 才关闭。
+支持 `--target=<version>`、`up --dry-run`、`--config-dir=configs`。输出单条 JSON 摘要到 stdout，
+日志到 stderr；错误、取消、超时、gap 均返回非零退出码。plan/status 不取得执行锁，可能创建状态表。
+锁无自动续租，`--lock-ttl` 必须大于 `--timeout`，迁移函数必须配合 context 取消。
+
+随项目提供的 users/user_profiles DDL 仅支持 SQLite，命令会拒绝其他方言；
+切换 MySQL/PostgreSQL 时应先修改业务 DDL 与此方言检查。Pi 框架自身支持这些迁移后端。
+完整说明见 [迁移命令](docs/migration.md)。
 
 如需新增迁移模板：
 
@@ -100,7 +115,7 @@ make bootstrap
 - `cmd/server` 使用 Fx 负责依赖装配，启动后通过 `piApp.RunContext(ctx)` 交给 Pi 管理 HTTP/gRPC/metrics 生命周期。
 - `cmd/server` 自己创建 signal context，避免 Fx `Run()` 和 Pi `Run()` 双重接管 OS signal。
 - Fx 只调用 `Start` / `Stop`，Pi app 由 `RunContext` 在同一个 context 下启动、阻塞和优雅停机。
-- `cmd/migration` 是一次性入口，仍通过 Fx `OnStart` 执行迁移并主动 shutdown。
+- `cmd/migration` 是一次性入口，通过 `run(ctx) error` 传递失败，仅打开所需 SQL 连接；每次执行均关闭连接，不启动 HTTP/gRPC/metrics。
 - `cmd/task` 由 Fx 托管 gocron scheduler 生命周期。
 
 ## 鉴权策略

@@ -22,16 +22,6 @@ func TestServerDIGraph(t *testing.T) {
 	}
 }
 
-func TestMigrationDIGraph(t *testing.T) {
-	err := fx.ValidateApp(
-		bootstrap.CoreModule,
-		fx.Invoke(server.RegisterMigrateServer),
-	)
-	if err != nil {
-		t.Fatalf("migration DI graph validation failed: %v", err)
-	}
-}
-
 func TestTaskDIGraph(t *testing.T) {
 	err := fx.ValidateApp(
 		bootstrap.CoreModule,

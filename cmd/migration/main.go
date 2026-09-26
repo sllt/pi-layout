@@ -1,14 +1,24 @@
 package main
 
 import (
-	"github.com/sllt/pi-layout/internal/bootstrap"
-	"github.com/sllt/pi-layout/internal/server"
-	"go.uber.org/fx"
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/sllt/pi-layout/internal/migrationcmd"
 )
 
 func main() {
-	fx.New(
-		bootstrap.CoreModule,
-		fx.Invoke(server.RegisterMigrateServer),
-	).Run()
+	if err := run(context.Background()); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run(parent context.Context) error {
+	ctx, stop := signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return migrationcmd.Run(ctx, os.Args[1:], os.Stdout, os.Stderr)
 }

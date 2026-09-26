@@ -1,6 +1,9 @@
 package migrations
 
-import "github.com/sllt/pi/pkg/pi/migration"
+import (
+	"context"
+	"github.com/sllt/pi/pkg/pi/migration"
+)
 
 const createUsersTable = `CREATE TABLE IF NOT EXISTS users (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -13,8 +16,9 @@ const createUsersTable = `CREATE TABLE IF NOT EXISTS users (
 
 func createUsersTableMigration() migration.Migrate {
 	return migration.Migrate{
-		UP: func(d migration.Datasource) error {
-			_, err := d.SQL.Exec(createUsersTable)
+		Name: "create_users_table",
+		UpContext: func(ctx context.Context, d migration.Datasource) error {
+			_, err := d.SQL.ExecContext(ctx, createUsersTable)
 			if err != nil {
 				return err
 			}
