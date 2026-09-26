@@ -1,5 +1,17 @@
 # Pi Layout
 
+### v0.4.1 业务契约升级
+
+- 身份统一为 Pi Principal。HTTP 本人资料取已验证主体，跨用户 query 被拒绝；gRPC 的 user_id 仍经 service 授权，普通用户不能访问他人。可信任务可显式授予 `users:read:any` / `users:write:any`，模板 JWT 不颁发这些权限。
+- service 对内部 types 统一校验：邮箱、密码 8–72 字节、昵称最多 64 字符/256 字节。HTTP/protobuf 只负责解码与转换，所有入口共用业务规则。
+- 注册返回 201，登录/读取返回 200，资料修改返回 204 且没有正文。邮箱唯一冲突为 HTTP 409 / gRPC AlreadyExists，业务码仍为 1001。`pkg/errcode.Error` 改为 `apperror.Error`，使用 Kind/Code/PublicMessage/WithCause/Details，不再依赖旧 BizCode/Message 字段或 StatusCode 方法。
+- Repository 业务事务改用 `BeginTxContext`，保留原 Transaction 接口，具体 Repository 另提供 TransactionWithOptions。自定义 DB 需实现该可选能力；不再静默退回无法取消的 Begin。嵌套调用加入已有事务；任何嵌套错误、panic、跨库尝试或选项变更都使外层只能回滚。提交失败不自动重试。
+- 资料只写 email/nickname，改密单独调用 UpdatePassword，不把旧整行对象回写。RowsAffected=0 会在相同 context/事务检查记录是否仍存在；SQLite 默认单连接，连接池等待可取消。
+
+自定义 UserRepository 实现与 mock 需补齐 UpdateEmail/UpdatePassword；NewHTTPServer 现在返回装配错误，应交给 Fx 或显式检查。
+
+SQLite 的并发注册、改密/资料交错、删除竞争、事务取消/panic/commit 失败，以及 service/HTTP/gRPC 授权矩阵均有测试。此矩阵不代表业务 SQL 已跨方言。
+
 ### v0.4.0 运行时装配
 
 `internal/bootstrap` 使用 `pi.Build` 和配置快照，Fx 构造期只分配稳定 SQL 句柄；Fx OnStart 激活数据库和 Pi，
@@ -21,6 +33,8 @@ GOWORK=off go build ./...
 
 开发框架本身时可自行使用忽略提交的 go.work；发布验收使用 `GOWORK=off`。
 
+开发本脚手架或生成应用时，使用框架仓库统一维护的 [pi-dev skill](https://github.com/sllt/pi/tree/master/skills/pi-dev)（本机安装后调用 `$pi-dev`）；按实际依赖版本核对说明。
+
 ### 可重复生成与运行（v0.3.2）
 
 使用 Go 1.25.0 验收（最低版本见 go.mod）；`make init` 安装固定版本的 Pi、mockgen、swag、Air 和 protobuf 插件到项目 `.tools/bin`，生成另需 protoc 33.1。
@@ -30,7 +44,7 @@ GOWORK=off go build ./...
 本地配置不再跟踪：复制 `configs/.env.example` 到 `configs/.env`，设置随机 JWT 密钥；默认业务后端为 SQLite，运行前创建 `storage`。Compose 的 MySQL/Redis 通过 `--profile mysql` / `--profile redis` 显式启用，不能直接替代 SQLite 业务 SQL。
 根目录 Dockerfile 固定 Go 1.25.0，构建不运行 tidy，镜像包含 `server` / `task` / `migration` 三个入口，以 UID 10001 运行并包含 CA。运行时通过环境变量或只读配置挂载传入配置，`/app/storage` 需要可写；镜像不包含本地 .env、数据库和日志。已验证 Linux amd64；其他平台需在目标架构运行相同验收。
 
-v0.3.2 暂保留旧 HTTP 成功默认值：注册 202、登录 201、资料读取/修改 200。Swagger 与 smoke 已对齐，v0.4.1 再迁移为显式状态。
+升级旧客户端时注意：v0.3.2 的注册 202/登录 201/修改 200 已在 v0.4.1 改为 201/200/204；204 不再解析 JSON。
 
 ## 特性
 
@@ -146,9 +160,9 @@ CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；
 
 - `cmd/server` 使用 Fx 负责依赖装配，启动后通过 `piApp.RunContext(ctx)` 交给 Pi 管理 HTTP/gRPC/metrics 生命周期。
 - `cmd/server` 自己创建 signal context，避免 Fx `Run()` 和 Pi `Run()` 双重接管 OS signal。
-- Fx 只调用 `Start` / `Stop`，Pi app 由 `RunContext` 在同一个 context 下启动、阻塞和优雅停机。
+- Fx Hook 启动/关闭 Build app；RunContext 等待运行结果和进程取消，启动预算与运行期 context 分离。
 - `cmd/migration` 是一次性入口，通过 `run(ctx) error` 传递失败，仅打开所需 SQL 连接；每次执行均关闭连接，不启动 HTTP/gRPC/metrics。
-- `cmd/task` 由 Fx 托管 gocron scheduler 生命周期。
+- `cmd/task` 由 Fx 管理进程，gocron scheduler 在 Pi.Go 中运行，任务退出后才释放 SQL。
 
 ## 鉴权策略
 
@@ -157,16 +171,10 @@ CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；
 
 ### gRPC 用户示例的状态
 
-`internal/grpc/user` 保留为协议适配代码参考，默认不注册 `UserService`。只配置
-`GRPC_PORT` 不会启用该服务；当前默认入口也不会启动 gRPC 监听。
-此前依赖这些 RPC 的应用需要迁移到已鉴权的 HTTP 接口，或先完成以下条件：
-
-- 从经过验证的凭证建立调用者身份；本人资料接口使用该身份确定用户。
-- 访问其他用户资料时执行明确的资源授权，不能仅信任请求中的 `UserId`。
-- 对齐 HTTP 与 gRPC 的业务输入校验、错误映射，并在业务层执行授权。
-- 通过无令牌、无效令牌、用户 A 访问 A、A 访问 B、管理员访问 B 的权限测试。
-
-这项关闭是临时缓解；跨协议身份与授权计划在 Pi v0.4.1 完整验收。
+默认保持关闭。明确设置 `GRPC_ENABLED=true` 与 `USER_GRPC_ENABLED=true` 才注册安全的 UserService；
+注册/登录公开，资料 unary RPC 使用已验证 Bearer Principal，service 再做资源授权；流式扩展可复用相同 Principal interceptor。
+`GRPC_ADDR` 控制地址，`GRPC_CERT_FILE` / `GRPC_KEY_FILE` 配置 TLS。仅设置端口不会启用业务服务。
+`userservice_server.go` 为手写 adapter，`pi wrap grpc server` 保留它；其余 wrapper 由模板生成。
 
 ## 业务模块开发
 

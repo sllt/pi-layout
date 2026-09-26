@@ -1,39 +1,27 @@
 package errcode
 
-// Error represents a structured application error with business code and HTTP status.
-// It implements pi's StatusCodeResponder and CodeResponder interfaces,
-// so pi automatically renders the correct HTTP status and JSON response.
-type Error struct {
-	BizCode int
-	Message string
-}
+import "github.com/sllt/pi/pkg/pi/apperror"
 
+// Error is transport independent. Adapters map Kind to HTTP/gRPC/CLI semantics.
+type Error = apperror.Error
+
+// New preserves the existing catalog helper; new business errors should choose
+// their Kind explicitly with apperror.New.
 func New(code int, msg string) *Error {
-	return &Error{
-		BizCode: code,
-		Message: msg,
+	kind := apperror.InvalidArgument
+	switch code {
+	case 401:
+		kind = apperror.Unauthenticated
+	case 403:
+		kind = apperror.Forbidden
+	case 404:
+		kind = apperror.NotFound
+	case 409:
+		kind = apperror.Conflict
+	case 500:
+		kind = apperror.Internal
+	case 503:
+		kind = apperror.Unavailable
 	}
-}
-
-func (e *Error) Error() string {
-	return e.Message
-}
-
-// PublicMessage marks this catalogued application message safe for clients.
-func (e *Error) PublicMessage() string { return e.Message }
-
-// Code implements pi's http.CodeResponder interface.
-// Returns the business error code for the JSON response "code" field.
-func (e *Error) Code() int {
-	return e.BizCode
-}
-
-// StatusCode returns the appropriate HTTP status code for the error.
-// For common HTTP errors (400-599), it returns the BizCode directly.
-// For business errors (>= 1000), it returns 400 (Bad Request).
-func (e *Error) StatusCode() int {
-	if e.BizCode >= 400 && e.BizCode < 600 {
-		return e.BizCode
-	}
-	return 400
+	return apperror.New(kind, code, msg)
 }

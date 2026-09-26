@@ -22,7 +22,7 @@ func AsError(err error) *Error {
 		return appErr
 	}
 
-	return ErrInternalServerError
+	return ErrInternalServerError.WithCause(err)
 }
 
 // WriteHTTPError renders the same response envelope that Pi handlers use:
@@ -37,5 +37,9 @@ func WriteHTTPError(w http.ResponseWriter, r *http.Request, err error) {
 		method = r.Method
 	}
 
+	if err == nil {
+		piHTTP.NewResponder(w, method).Respond(nil, nil)
+		return
+	}
 	piHTTP.NewResponder(w, method).Respond(nil, AsError(err))
 }

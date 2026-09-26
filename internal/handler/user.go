@@ -4,7 +4,9 @@ import (
 	v1 "github.com/sllt/pi-layout/api/v1"
 	"github.com/sllt/pi-layout/internal/service"
 	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi/pkg/pi"
+	"github.com/sllt/pi/pkg/pi/http/response"
 )
 
 type UserHandler struct {
@@ -27,7 +29,7 @@ func NewUserHandler(handler *Handler, userService service.UserService) *UserHand
 // @Accept json
 // @Produce json
 // @Param request body v1.RegisterRequest true "params"
-// @Success 202 {object} errcode.Response
+// @Success 201 {object} errcode.Response
 // @Router /api/v1/register [post]
 func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 	req := new(v1.RegisterRequest)
@@ -45,7 +47,7 @@ func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return response.Created(nil), nil
 }
 
 // Login godoc
@@ -56,7 +58,7 @@ func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 // @Accept json
 // @Produce json
 // @Param request body v1.LoginRequest true "params"
-// @Success 201 {object} errcode.Response{data=v1.LoginResponseData}
+// @Success 200 {object} errcode.Response{data=v1.LoginResponseData}
 // @Router /api/v1/login [post]
 func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 	var req v1.LoginRequest
@@ -74,9 +76,9 @@ func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return v1.LoginResponseData{
+	return response.OK(v1.LoginResponseData{
 		AccessToken: output.AccessToken,
-	}, nil
+	}), nil
 }
 
 // GetProfile godoc
@@ -91,6 +93,9 @@ func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 // @Router /api/v1/user [get]
 func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
+	if target := ctx.Param("userId"); target != "" && target != userId {
+		return nil, errcode.ErrForbidden
+	}
 
 	output, err := h.userService.GetProfile(ctx, userId)
 	if err != nil {
@@ -112,10 +117,13 @@ func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 // @Produce json
 // @Security Bearer
 // @Param request body v1.UpdateProfileRequest true "params"
-// @Success 200 {object} errcode.Response
+// @Success 204 "profile updated"
 // @Router /api/v1/user [put]
 func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
+	if target := ctx.Param("userId"); target != "" && target != userId {
+		return nil, errcode.ErrForbidden
+	}
 
 	var req v1.UpdateProfileRequest
 	if err := ctx.Bind(&req); err != nil {
@@ -131,5 +139,5 @@ func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	return response.NoContent(), nil
 }

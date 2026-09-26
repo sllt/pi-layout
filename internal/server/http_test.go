@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -20,7 +20,6 @@ import (
 	"github.com/sllt/pi-layout/pkg/log"
 	mockservice "github.com/sllt/pi-layout/test/mocks/service"
 	"github.com/sllt/pi/pkg/pi"
-	"github.com/sllt/pi/pkg/pi/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,7 +37,7 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 		"PI_TELEMETRY": "false", "METRICS_PORT": "0", "JWT_SECRET": "test-user-boundary-secret-at-least-32-bytes",
 		"DB_HOST": "", "DB_DIALECT": "", "REDIS_HOST": "", "PUBSUB_BACKEND": "",
 		"TRACE_EXPORTER": "", "TRACER_URL": "", "TRACER_HOST": "", "REMOTE_LOG_URL": "",
-		"CERT_FILE": "", "KEY_FILE": "", "LOG_LEVEL": "ERROR", "HTTP_PORT": strconv.Itoa(testutil.GetFreePort(t)),
+		"CERT_FILE": "", "KEY_FILE": "", "LOG_LEVEL": "ERROR", "HTTP_ADDR": "127.0.0.1:0", "USER_GRPC_ENABLED": "false",
 		"GRPC_PORT":            strconv.Itoa(grpcPort.Addr().(*net.TCPAddr).Port),
 		"CORS_ALLOWED_ORIGINS": "https://web.example", "CORS_ALLOW_CREDENTIALS": "false",
 	} {
@@ -71,10 +70,10 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 		Email: "a@example.com", Nickname: "Alice updated",
 	}).Return(nil)
 
-	NewHTTPServer(router.RouterDeps{
+	require.NoError(t, NewHTTPServer(router.RouterDeps{
 		App: app, Logger: logger, JWT: tokens,
 		UserHandler: handler.NewUserHandler(handler.NewHandler(logger), users),
-	})
+	}))
 	require.NoError(t, app.Start(t.Context()), "default HTTP setup must not start gRPC")
 
 	cases := []struct {
@@ -82,21 +81,22 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 		status                          int
 	}{
 		{"register", http.MethodPost, "/api/v1/register", "",
-			`{"email":"a@example.com","password":"test-password"}`, http.StatusAccepted},
-		{"login", http.MethodPost, "/api/v1/login", "",
 			`{"email":"a@example.com","password":"test-password"}`, http.StatusCreated},
+		{"login", http.MethodPost, "/api/v1/login", "",
+			`{"email":"a@example.com","password":"test-password"}`, http.StatusOK},
 		{"anonymous profile", http.MethodGet, "/api/v1/user/", "", "", http.StatusUnauthorized},
 		{"invalid token", http.MethodGet, "/api/v1/user/", "invalid", "", http.StatusUnauthorized},
 		{"query token rejected", http.MethodGet, "/api/v1/user/?accessToken=" + token, "", "", http.StatusUnauthorized},
 		{"anonymous update", http.MethodPut, "/api/v1/user/", "",
 			`{"email":"b@example.com","nickname":"Bob"}`, http.StatusUnauthorized},
-		{"own profile", http.MethodGet, "/api/v1/user/?userId=user-b", token, "", http.StatusOK},
-		{"own update", http.MethodPut, "/api/v1/user/?userId=user-b", token,
-			`{"email":"a@example.com","nickname":"Alice updated","userId":"user-b"}`, http.StatusOK},
+		{"cross profile", http.MethodGet, "/api/v1/user/?userId=user-b", token, "", http.StatusForbidden},
+		{"own profile", http.MethodGet, "/api/v1/user/", token, "", http.StatusOK},
+		{"own update", http.MethodPut, "/api/v1/user/", token,
+			`{"email":"a@example.com","nickname":"Alice updated"}`, http.StatusNoContent},
 	}
 	client := &http.Client{Timeout: 5 * time.Second}
 	t.Cleanup(client.CloseIdleConnections)
-	baseURL := fmt.Sprintf("http://127.0.0.1:%s", os.Getenv("HTTP_PORT"))
+	baseURL := "http://" + app.HTTPAddress()
 	for _, origin := range []string{"https://web.example", "https://evil.example"} {
 		req, err := http.NewRequestWithContext(t.Context(), "OPTIONS", baseURL+"/api/v1/user/", nil)
 		require.NoError(t, err)
@@ -126,6 +126,12 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 			require.NoError(t, doErr)
 			defer resp.Body.Close()
 			require.Equal(t, tc.status, resp.StatusCode)
+			if tc.status == http.StatusNoContent {
+				data, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+				require.Empty(t, data)
+				return
+			}
 			var body struct {
 				Code int `json:"code"`
 				Data struct {
@@ -134,7 +140,7 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 				} `json:"data"`
 			}
 			require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
-			if tc.status == http.StatusUnauthorized {
+			if tc.status >= 400 {
 				require.NotZero(t, body.Code)
 			} else {
 				require.Zero(t, body.Code)

@@ -6,6 +6,7 @@ package mock_repository
 
 import (
 	context "context"
+	sql "database/sql"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -35,15 +36,52 @@ func (m *MockTransaction) EXPECT() *MockTransactionMockRecorder {
 }
 
 // Transaction mocks base method.
-func (m *MockTransaction) Transaction(ctx context.Context, fn func(context.Context) error) error {
+func (m *MockTransaction) Transaction(arg0 context.Context, arg1 func(context.Context) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Transaction", ctx, fn)
+	ret := m.ctrl.Call(m, "Transaction", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Transaction indicates an expected call of Transaction.
-func (mr *MockTransactionMockRecorder) Transaction(ctx, fn interface{}) *gomock.Call {
+func (mr *MockTransactionMockRecorder) Transaction(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transaction", reflect.TypeOf((*MockTransaction)(nil).Transaction), ctx, fn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transaction", reflect.TypeOf((*MockTransaction)(nil).Transaction), arg0, arg1)
+}
+
+// MockTransactionWithOptions is a mock of TransactionWithOptions interface.
+type MockTransactionWithOptions struct {
+	ctrl     *gomock.Controller
+	recorder *MockTransactionWithOptionsMockRecorder
+}
+
+// MockTransactionWithOptionsMockRecorder is the mock recorder for MockTransactionWithOptions.
+type MockTransactionWithOptionsMockRecorder struct {
+	mock *MockTransactionWithOptions
+}
+
+// NewMockTransactionWithOptions creates a new mock instance.
+func NewMockTransactionWithOptions(ctrl *gomock.Controller) *MockTransactionWithOptions {
+	mock := &MockTransactionWithOptions{ctrl: ctrl}
+	mock.recorder = &MockTransactionWithOptionsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTransactionWithOptions) EXPECT() *MockTransactionWithOptionsMockRecorder {
+	return m.recorder
+}
+
+// TransactionWithOptions mocks base method.
+func (m *MockTransactionWithOptions) TransactionWithOptions(arg0 context.Context, arg1 *sql.TxOptions, arg2 func(context.Context) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionWithOptions", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TransactionWithOptions indicates an expected call of TransactionWithOptions.
+func (mr *MockTransactionWithOptionsMockRecorder) TransactionWithOptions(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionWithOptions", reflect.TypeOf((*MockTransactionWithOptions)(nil).TransactionWithOptions), arg0, arg1, arg2)
 }

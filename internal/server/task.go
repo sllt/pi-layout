@@ -1,52 +1,35 @@
 package server
 
 import (
-	"context"
 	"time"
 
 	"github.com/go-co-op/gocron"
 	"github.com/sllt/pi-layout/internal/task"
 	"github.com/sllt/pi-layout/pkg/log"
-	"go.uber.org/fx"
+	"github.com/sllt/pi/pkg/pi"
 )
 
-func RegisterTaskServer(lc fx.Lifecycle, log *log.Logger, userTask task.UserTask) {
-	var (
-		scheduler *gocron.Scheduler
-		runCtx    context.Context
-		cancel    context.CancelFunc
-	)
-
-	lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
-			gocron.SetPanicHandler(func(jobName string, recoverData interface{}) {
-				log.Errorf("TaskServer Panic job=%s recover=%v", jobName, recoverData)
-			})
-
-			runCtx, cancel = context.WithCancel(context.Background())
-			scheduler = gocron.NewScheduler(time.UTC)
-
-			_, err := scheduler.CronWithSeconds("0/3 * * * * *").Do(func() {
-				if err := userTask.CheckUser(runCtx); err != nil {
-					log.Errorf("CheckUser error: %v", err)
+// The scheduler is a managed worker: jobs receive runtime cancellation and Stop
+// waits for the scheduler before closing SQL, including fatal runtime shutdown.
+func RegisterTaskServer(app *pi.App, logger *log.Logger, userTask task.UserTask) {
+	app.Go("task-scheduler", func(ctx *pi.Context) error {
+		scheduler := gocron.NewScheduler(time.UTC)
+		defer scheduler.Stop()
+		_, err := scheduler.CronWithSeconds("0/3 * * * * *").Do(func() {
+			defer func() {
+				if p := recover(); p != nil {
+					logger.Errorf("CheckUser panic: %v", p)
 				}
-			})
-			if err != nil {
-				return err
+			}()
+			if err := userTask.CheckUser(ctx.Context); err != nil {
+				logger.Errorf("CheckUser error: %v", err)
 			}
-
-			scheduler.StartAsync()
-			return nil
-		},
-		OnStop: func(context.Context) error {
-			if cancel != nil {
-				cancel()
-			}
-			if scheduler != nil {
-				scheduler.Stop()
-			}
-			log.Info("TaskServer stop...")
-			return nil
-		},
+		})
+		if err != nil {
+			return err
+		}
+		scheduler.StartAsync()
+		<-ctx.Done()
+		return ctx.Err()
 	})
 }

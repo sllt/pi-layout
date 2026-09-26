@@ -8,6 +8,7 @@ import (
 	"github.com/sllt/pi-layout/internal/repository"
 	"github.com/sllt/pi-layout/internal/types"
 	"github.com/sllt/pi-layout/pkg/errcode"
+	"github.com/sllt/pi/pkg/pi/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,10 +38,16 @@ type userService struct {
 }
 
 func (s *userService) Register(ctx context.Context, input *types.RegisterInput) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := input.Validate(); err != nil {
+		return err
+	}
 	// check if email already exists
 	user, err := s.userRepo.GetByEmail(ctx, input.Email)
 	if err != nil {
-		return errcode.ErrInternalServerError
+		return errcode.ErrInternalServerError.WithCause(err)
 	}
 	if user != nil {
 		return errcode.ErrEmailAlreadyUse
@@ -76,8 +83,17 @@ func (s *userService) Register(ctx context.Context, input *types.RegisterInput) 
 }
 
 func (s *userService) Login(ctx context.Context, input *types.LoginInput) (*types.LoginOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
 	user, err := s.userRepo.GetByEmail(ctx, input.Email)
-	if err != nil || user == nil {
+	if err != nil {
+		return nil, errcode.ErrInternalServerError.WithCause(err)
+	}
+	if user == nil {
 		return nil, errcode.ErrUnauthorized
 	}
 
@@ -94,6 +110,10 @@ func (s *userService) Login(ctx context.Context, input *types.LoginInput) (*type
 }
 
 func (s *userService) GetProfile(ctx context.Context, userId string) (*types.UserOutput, error) {
+	userId, err := auth.AuthorizeSubject(ctx, userId, "users:read:any")
+	if err != nil {
+		return nil, err
+	}
 	profile, err := s.profileRepo.GetByUserID(ctx, userId)
 	if err != nil {
 		return nil, err
@@ -106,6 +126,13 @@ func (s *userService) GetProfile(ctx context.Context, userId string) (*types.Use
 }
 
 func (s *userService) UpdateProfile(ctx context.Context, userId string, input *types.UpdateProfileInput) error {
+	userId, err := auth.AuthorizeSubject(ctx, userId, "users:write:any")
+	if err != nil {
+		return err
+	}
+	if err := input.Validate(); err != nil {
+		return err
+	}
 	user, err := s.userRepo.GetByID(ctx, userId)
 	if err != nil {
 		return err
@@ -118,18 +145,17 @@ func (s *userService) UpdateProfile(ctx context.Context, userId string, input *t
 	if input.Email != user.Email {
 		existing, err := s.userRepo.GetByEmail(ctx, input.Email)
 		if err != nil {
-			return errcode.ErrInternalServerError
+			return errcode.ErrInternalServerError.WithCause(err)
 		}
 		if existing != nil && existing.UserId != userId {
 			return errcode.ErrEmailAlreadyUse
 		}
 	}
 
-	user.Email = input.Email
 	profile.Nickname = input.Nickname
 
 	return s.tm.Transaction(ctx, func(ctx context.Context) error {
-		if err := s.userRepo.Update(ctx, user); err != nil {
+		if err := s.userRepo.UpdateEmail(ctx, userId, input.Email); err != nil {
 			return err
 		}
 		return s.profileRepo.Update(ctx, profile)
@@ -140,6 +166,9 @@ func defaultNickname(email string) string {
 	local, _, ok := strings.Cut(email, "@")
 	if !ok || local == "" {
 		return "New User"
+	}
+	if runes := []rune(local); len(runes) > 64 {
+		return string(runes[:64])
 	}
 	return local
 }

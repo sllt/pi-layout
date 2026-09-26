@@ -15,6 +15,7 @@ import (
 	"github.com/sllt/pi-layout/pkg/log"
 	"github.com/sllt/pi-layout/pkg/sid"
 	"github.com/sllt/pi-layout/test/mocks/repository"
+	"github.com/sllt/pi/pkg/pi/auth"
 	"github.com/sllt/pi/pkg/pi/logging"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
@@ -170,7 +171,7 @@ func TestUserService_GetProfile(t *testing.T) {
 
 	_, mockProfileRepo, _, userService := newUserServiceForTest(ctrl)
 
-	ctx := context.Background()
+	ctx := auth.WithPrincipal(context.Background(), auth.Principal{Subject: "123"})
 	userId := "123"
 
 	mockProfileRepo.EXPECT().GetByUserID(ctx, userId).Return(&model.UserProfile{
@@ -191,7 +192,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 
 	mockUserRepo, mockProfileRepo, mockTm, userService := newUserServiceForTest(ctrl)
 
-	ctx := context.Background()
+	ctx := auth.WithPrincipal(context.Background(), auth.Principal{Subject: "123"})
 	userId := "123"
 	req := &types.UpdateProfileInput{
 		Nickname: "testuser",
@@ -213,7 +214,7 @@ func TestUserService_UpdateProfile(t *testing.T) {
 		DoAndReturn(func(ctx context.Context, fn func(context.Context) error) error {
 			return fn(ctx)
 		})
-	mockUserRepo.EXPECT().Update(ctx, gomock.Any()).Return(nil)
+	mockUserRepo.EXPECT().UpdateEmail(ctx, userId, req.Email).Return(nil)
 	mockProfileRepo.EXPECT().
 		Update(ctx, gomock.AssignableToTypeOf(&model.UserProfile{})).
 		DoAndReturn(func(_ context.Context, profile *model.UserProfile) error {
@@ -232,7 +233,7 @@ func TestUserService_UpdateProfile_UserNotFound(t *testing.T) {
 
 	mockUserRepo, _, _, userService := newUserServiceForTest(ctrl)
 
-	ctx := context.Background()
+	ctx := auth.WithPrincipal(context.Background(), auth.Principal{Subject: "123"})
 	userId := "123"
 	req := &types.UpdateProfileInput{
 		Nickname: "testuser",

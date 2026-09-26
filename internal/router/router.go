@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/sllt/pi-layout/internal/handler"
+	"github.com/sllt/pi-layout/internal/service"
 	"github.com/sllt/pi-layout/pkg/jwt"
 	"github.com/sllt/pi-layout/pkg/log"
 	"github.com/sllt/pi/pkg/pi"
@@ -15,4 +16,5 @@ type RouterDeps struct {
 	Logger      *log.Logger
 	JWT         *jwt.JWT
 	UserHandler *handler.UserHandler
+	UserService service.UserService
 }

@@ -16,7 +16,11 @@ func NewPiApp() (*pi.App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pi.Build(pi.WithConfig(cfg.Values()), pi.WithManagedSQL())
+	values := cfg.Values()
+	if cfg.Get("DB_DIALECT") == "sqlite" && cfg.Get("DB_MAX_OPEN_CONNECTION") == "" {
+		values["DB_MAX_OPEN_CONNECTION"] = "1"
+	}
+	return pi.Build(pi.WithConfig(values), pi.WithManagedSQL(), pi.WithExplicitHTTPStatus())
 }
 
 // RegisterRuntime makes Fx the lifecycle host. The startup budget does not own

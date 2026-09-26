@@ -6,7 +6,7 @@ import (
 	"github.com/sllt/pi/pkg/pi"
 )
 
-func NewHTTPServer(deps router.RouterDeps) {
+func NewHTTPServer(deps router.RouterDeps) error {
 	app := deps.App
 
 	// Register global middleware
@@ -27,6 +27,5 @@ func NewHTTPServer(deps router.RouterDeps) {
 	// Register user routes (HTTP)
 	router.InitUserRouter(deps)
 
-	// The gRPC user example remains unregistered until it enforces verified
-	// identity, resource authorization and the same validation as HTTP.
+	return NewUserGRPCServer(app, deps.JWT, deps.UserService)
 }

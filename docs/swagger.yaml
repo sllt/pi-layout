@@ -77,8 +77,8 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
             allOf:
             - $ref: '#/definitions/errcode.Response'
@@ -104,8 +104,8 @@ paths:
       produces:
       - application/json
       responses:
-        "202":
-          description: Accepted
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/errcode.Response'
       summary: 用户注册
@@ -145,10 +145,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/errcode.Response'
+        "204":
+          description: profile updated
       security:
       - Bearer: []
       summary: 修改用户信息

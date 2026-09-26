@@ -8,6 +8,7 @@ import (
 	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi-layout/pkg/jwt"
 	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi/auth"
 )
 
 type contextKey string
@@ -32,6 +33,7 @@ func StrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler 
 			}
 
 			ctx := context.WithValue(r.Context(), ClaimsKey, claims)
+			ctx = auth.WithPrincipal(ctx, auth.Principal{Subject: claims.Subject})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -53,12 +55,16 @@ func NoStrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handle
 			}
 
 			ctx := context.WithValue(r.Context(), ClaimsKey, claims)
+			ctx = auth.WithPrincipal(ctx, auth.Principal{Subject: claims.Subject})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func bearerToken(r *http.Request) string {
+	if len(r.Header.Values("Authorization")) != 1 {
+		return ""
+	}
 	parts := strings.Fields(r.Header.Get("Authorization"))
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 		return ""

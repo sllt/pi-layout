@@ -3,9 +3,8 @@ package handler
 import (
 	"context"
 
-	"github.com/sllt/pi-layout/internal/middleware"
-	"github.com/sllt/pi-layout/pkg/jwt"
 	"github.com/sllt/pi-layout/pkg/log"
+	"github.com/sllt/pi/pkg/pi/auth"
 )
 
 type Handler struct {
@@ -21,13 +20,6 @@ func NewHandler(
 }
 
 func GetUserIdFromCtx(ctx context.Context) string {
-	v := ctx.Value(middleware.ClaimsKey)
-	if v == nil {
-		return ""
-	}
-	claims, ok := v.(*jwt.MyCustomClaims)
-	if !ok {
-		return ""
-	}
-	return claims.UserId
+	p, _ := auth.FromContext(ctx)
+	return p.Subject
 }

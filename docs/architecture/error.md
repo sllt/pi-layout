@@ -1,6 +1,6 @@
 # 错误码与响应约定
 
-pi-layout 使用 `pkg/errcode` 描述业务错误。`errcode.Error` 实现了 Pi 的 `Code()` 和 `StatusCode()` 接口，因此 Handler / Service 返回该错误时，Pi 会自动渲染统一响应。
+pi-layout 的 `pkg/errcode.Error` 是 Pi `apperror.Error` 的别名。Kind 决定协议状态，Code 保持业务身份，PublicMessage 可对外展示，WithCause 保留内部错误；HTTP/gRPC/CLI mapper 负责转换，不在业务类型中耦合协议。
 
 ## HTTP 响应 envelope
 
@@ -26,7 +26,9 @@ pi-layout 使用 `pkg/errcode` 描述业务错误。`errcode.Error` 实现了 Pi
 | `400-599` | 通用 HTTP / 系统错误 | `ErrBadRequest`、`ErrUnauthorized`、`ErrNotFound`、`ErrInternalServerError` |
 | `1000-1999` | 业务错误 | `ErrEmailAlreadyUse`、`ErrInvalidSignature` |
 
-业务错误默认返回 HTTP `400 Bad Request`，但响应体中的 `code` 保留业务码，例如 `1001`。
+业务错误按 Kind 映射状态，例如邮箱重复为 Conflict：HTTP 409、gRPC AlreadyExists，业务码 1001。
+校验错误为 InvalidArgument，可携带公开的 `details: [{"field":"email","rule":"valid email required"}]`，不携带输入值。
+errors.Is/As 与 errors.Join 可保留 cause；取消优先分类，其他分类取确定的错误分支，未知错误不返回原始消息。
 
 ## 分层规则
 
@@ -55,6 +57,8 @@ json.NewEncoder(w).Encode(map[string]any{
 })
 ```
 
-## 未来对齐方向
+## 跨协议映射
 
-gRPC 目前仍直接返回 error。后续如果 Pi 框架提供 unified error model，layout 的 `pkg/errcode` 应作为适配层对齐 HTTP / gRPC / CLI 的错误语义。
+gRPC wrapper 与 interceptor 调用 `grpc.MapError`，通过 ErrorInfo 携带 Kind/业务码、BadRequest 携带字段规则。
+CLI 可使用 `cmd.MapError` 得到安全输出和退出码；内部日志可以保留 cause，公开消息不要拼接 err.Error()。
+注册/登录/读取/修改成功码分别是 201/200/200/204；204 无正文。

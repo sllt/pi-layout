@@ -37,14 +37,14 @@ request() {
   actual="$(curl "${args[@]}")"
   [[ "$actual" == "$expected" ]] || { echo "$method $path: expected $expected, got $actual"; cat "$RUN/response.json"; exit 1; }
 }
-request POST /api/v1/register 202 '{"email":"smoke@example.com","password":"test-password"}'
+request POST /api/v1/register 201 '{"email":"smoke@example.com","password":"test-password"}'
 jq -e '.code == 0 and .data == null' "$RUN/response.json" >/dev/null
-request POST /api/v1/login 201 '{"email":"smoke@example.com","password":"test-password"}'
+request POST /api/v1/login 200 '{"email":"smoke@example.com","password":"test-password"}'
 TOKEN="$(jq -er 'select(.code == 0) | .data.accessToken | select(length > 20)' "$RUN/response.json")"
 request GET /api/v1/user 200 '' "$TOKEN"
 USER_ID="$(jq -er 'select(.code == 0) | .data.userId | select(length > 0)' "$RUN/response.json")"
-request PUT /api/v1/user 200 '{"email":"smoke@example.com","nickname":"smoke"}' "$TOKEN"
-jq -e '.code == 0' "$RUN/response.json" >/dev/null
+request PUT /api/v1/user 204 '{"email":"smoke@example.com","nickname":"smoke"}' "$TOKEN"
+[[ ! -s "$RUN/response.json" ]]
 request GET /api/v1/user 200 '' "$TOKEN"
 jq -e --arg id "$USER_ID" '.code == 0 and .data.userId == $id and .data.nickname == "smoke"' "$RUN/response.json" >/dev/null
 request GET /api/v1/user 401

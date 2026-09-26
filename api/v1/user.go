@@ -1,13 +1,13 @@
 package v1
 
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email" label:"邮箱"`
-	Password string `json:"password" binding:"required" label:"密码"`
+	Email    string `json:"email" validate:"required" label:"邮箱"`
+	Password string `json:"password" validate:"required" label:"密码"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email" label:"邮箱"`
-	Password string `json:"password" binding:"required" label:"密码"`
+	Email    string `json:"email" validate:"required" label:"邮箱"`
+	Password string `json:"password" validate:"required" label:"密码"`
 }
 
 type LoginResponseData struct {
@@ -16,7 +16,7 @@ type LoginResponseData struct {
 
 type UpdateProfileRequest struct {
 	Nickname string `json:"nickname" label:"昵称"`
-	Email    string `json:"email" binding:"required,email" label:"邮箱"`
+	Email    string `json:"email" validate:"required" label:"邮箱"`
 }
 
 type GetProfileResponseData struct {

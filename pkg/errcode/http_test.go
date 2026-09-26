@@ -40,8 +40,8 @@ func TestWriteHTTPError_BusinessError(t *testing.T) {
 
 	WriteHTTPError(rec, req, ErrEmailAlreadyUse)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d", http.StatusConflict, rec.Code)
 	}
 	resp := decodeResponse(t, rec)
 	if resp.Code != ErrEmailAlreadyUse.Code() || resp.Message != ErrEmailAlreadyUse.Error() || resp.Data != nil {

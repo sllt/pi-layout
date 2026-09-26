@@ -11,6 +11,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/sllt/pi-layout/internal/model"
 	"github.com/sllt/pi-layout/internal/repository"
+	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi-layout/pkg/log"
 	"github.com/sllt/pi/pkg/pi/datasource"
 	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
@@ -138,6 +139,25 @@ func TestUserRepository_Update(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestUpdateEmailZeroRowsChecksExistence(t *testing.T) {
+	for _, exists := range []bool{true, false} {
+		r, mock := setupUserRepository(t)
+		mock.ExpectExec("UPDATE users SET email").WithArgs("new@example.com", sqlmock.AnyArg(), "id").WillReturnResult(sqlmock.NewResult(0, 0))
+		rows := sqlmock.NewRows([]string{"exists"})
+		if exists {
+			rows.AddRow(1)
+		}
+		mock.ExpectQuery("SELECT 1 FROM users WHERE user_id").WithArgs("id").WillReturnRows(rows)
+		err := r.UpdateEmail(t.Context(), "id", "new@example.com")
+		if exists {
+			assert.NoError(t, err)
+		} else {
+			assert.ErrorIs(t, err, errcode.ErrNotFound)
+		}
+		assert.NoError(t, mock.ExpectationsWereMet())
+	}
 }
 
 func TestUserRepository_GetById(t *testing.T) {

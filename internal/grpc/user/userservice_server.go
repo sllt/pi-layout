@@ -1,7 +1,4 @@
-// versions:
-// 	pi-cli v0.1.0
-// 	pi v0.1.0
-// 	source: user.proto
+// Handwritten protobuf-to-business adapter; wrapper generation preserves this file.
 
 package user
 
@@ -12,8 +9,7 @@ import (
 )
 
 // UserServicePiServer defines the gRPC server implementation.
-// This example is deliberately unregistered: profile methods currently trust
-// request user IDs. See README.md for the requirements before enabling it.
+// Identity and use-case authorization are enforced by interceptors and service.
 type UserServicePiServer struct {
 	health      *healthServer
 	userService service.UserService
@@ -29,8 +25,10 @@ func NewUserServicePiServerWithService(userService service.UserService) *UserSer
 
 func (s *UserServicePiServer) Register(ctx *pi.Context) (any, error) {
 	// 获取 protobuf 请求
-	reqWrapper := ctx.Request.(*RegisterRequestWrapper)
-	req := reqWrapper.RegisterRequest
+	req := new(RegisterRequest)
+	if err := ctx.Bind(req); err != nil {
+		return nil, err
+	}
 
 	// pb → types 转换
 	input := &types.RegisterInput{
@@ -46,8 +44,10 @@ func (s *UserServicePiServer) Register(ctx *pi.Context) (any, error) {
 }
 
 func (s *UserServicePiServer) Login(ctx *pi.Context) (any, error) {
-	reqWrapper := ctx.Request.(*LoginRequestWrapper)
-	req := reqWrapper.LoginRequest
+	req := new(LoginRequest)
+	if err := ctx.Bind(req); err != nil {
+		return nil, err
+	}
 
 	// pb → types 转换
 	input := &types.LoginInput{
@@ -67,8 +67,10 @@ func (s *UserServicePiServer) Login(ctx *pi.Context) (any, error) {
 }
 
 func (s *UserServicePiServer) GetProfile(ctx *pi.Context) (any, error) {
-	reqWrapper := ctx.Request.(*GetProfileRequestWrapper)
-	req := reqWrapper.GetProfileRequest
+	req := new(GetProfileRequest)
+	if err := ctx.Bind(req); err != nil {
+		return nil, err
+	}
 
 	output, err := s.userService.GetProfile(ctx, req.UserId)
 	if err != nil {
@@ -83,8 +85,10 @@ func (s *UserServicePiServer) GetProfile(ctx *pi.Context) (any, error) {
 }
 
 func (s *UserServicePiServer) UpdateProfile(ctx *pi.Context) (any, error) {
-	reqWrapper := ctx.Request.(*UpdateProfileRequestWrapper)
-	req := reqWrapper.UpdateProfileRequest
+	req := new(UpdateProfileRequest)
+	if err := ctx.Bind(req); err != nil {
+		return nil, err
+	}
 
 	// pb → types 转换
 	input := &types.UpdateProfileInput{

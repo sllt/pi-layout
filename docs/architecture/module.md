@@ -32,9 +32,9 @@
 
 更新资料流程演示了跨表更新：
 
-1. 根据 `user_id` 读取账号和资料。
+1. 从 Principal 验证目标主体，再根据 `user_id` 读取账号和资料。
 2. 如果邮箱发生变化，先检查邮箱唯一性。
-3. 在同一个事务里更新账号邮箱和资料昵称。
+3. 在同一个事务里按字段更新账号邮箱和资料昵称，不覆盖旧对象里的 password。
 
 ## 新增模块推荐步骤
 
@@ -60,4 +60,6 @@
 - 跨表写入必须尽量放在一个事务里，避免只写入一半数据。
 - 对外错误优先使用 `pkg/errcode`，底层数据库错误不要直接泄漏给 API 调用方。
 - 错误码和响应 envelope 参考 `docs/architecture/error.md`。
-- 生成文件可以提交，但生成流程必须可重复，后续统一收敛到 `make generate`。
+- 生成文件可以提交；使用 `make generator` / `make check-generated`，保留手写 adapter。
+- 内部 types 的 Validate 在 service 调用，HTTP/gRPC 不各自维护一套业务规则。
+- 事务内使用回调 ctx，不能把跨库 repository 混入已有事务；嵌套失败即使被捕获也不能提交外层。
