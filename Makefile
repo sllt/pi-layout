@@ -1,35 +1,43 @@
-.PHONY: init
-init:
-	go install github.com/golang/mock/mockgen@latest
-	go install github.com/swaggo/swag/cmd/swag@latest
-	go install github.com/air-verse/air@latest
+GO ?= go
+PI_VERSION ?= v0.3.2
+TOOLS := $(CURDIR)/.tools/bin
+export PATH := $(TOOLS):$(PATH)
 
-.PHONY: bootstrap
+.PHONY: init bootstrap build unit test race integration generator check-generated smoke container mock swag
+init:
+	mkdir -p $(TOOLS)
+	GOBIN=$(TOOLS) $(GO) install github.com/golang/mock/mockgen@v1.6.0
+	GOBIN=$(TOOLS) $(GO) install github.com/swaggo/swag/cmd/swag@v1.16.4
+	GOBIN=$(TOOLS) $(GO) install github.com/air-verse/air@v1.61.7
+	GOBIN=$(TOOLS) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
+	GOBIN=$(TOOLS) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	GOBIN=$(TOOLS) $(GO) install github.com/sllt/pi/cmd/pi@$(PI_VERSION)
+
 bootstrap:
-	cd ./deploy/docker-compose && docker compose up -d && cd ../../
-	go run ./cmd/migration
+	mkdir -p storage
+	$(GO) run ./cmd/migration up
 	air
 
-.PHONY: mock
-mock:
-	mockgen -source=internal/service/user.go -destination test/mocks/service/user.go
-	mockgen -source=internal/repository/user.go -destination test/mocks/repository/user.go
-	mockgen -source=internal/repository/repository.go -destination test/mocks/repository/repository.go
-
-.PHONY: test
-test:
-	go test -coverpkg=./internal/handler,./internal/service,./internal/repository -coverprofile=./coverage.out ./test/server/...
-	go tool cover -html=./coverage.out -o coverage.html
-
-.PHONY: build
 build:
-	go build -ldflags="-s -w" -o ./bin/server ./cmd/server
+	$(GO) build -mod=readonly -o ./bin/server ./cmd/server
+	$(GO) build -mod=readonly -o ./bin/task ./cmd/task
+	$(GO) build -mod=readonly -o ./bin/migration ./cmd/migration
 
-.PHONY: docker
-docker:
-	docker build -f deploy/build/Dockerfile --build-arg APP_RELATIVE_PATH=./cmd/task -t 1.1.1.1:5000/demo-task:v1 .
-	docker run --rm -i 1.1.1.1:5000/demo-task:v1
-
-.PHONY: swag
+unit test:
+	$(GO) test ./...
+race:
+	$(GO) test -race ./...
+integration:
+	$(GO) test ./internal/migrationcmd ./internal/server ./test/server/repository -count=1
+generator:
+	./scripts/generate.sh
+check-generated:
+	./scripts/generate.sh --check
+mock:
+	./scripts/generate.sh
 swag:
-	swag init  -g cmd/server/main.go -o ./docs
+	./scripts/generate.sh
+smoke:
+	./scripts/smoke.sh
+container:
+	./scripts/container.sh

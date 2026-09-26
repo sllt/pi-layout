@@ -27,8 +27,8 @@ func NewUserHandler(handler *Handler, userService service.UserService) *UserHand
 // @Accept json
 // @Produce json
 // @Param request body v1.RegisterRequest true "params"
-// @Success 200 {object} errcode.Response
-// @Router /register [post]
+// @Success 202 {object} errcode.Response
+// @Router /api/v1/register [post]
 func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 	req := new(v1.RegisterRequest)
 	if err := ctx.Bind(req); err != nil {
@@ -56,8 +56,8 @@ func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
 // @Accept json
 // @Produce json
 // @Param request body v1.LoginRequest true "params"
-// @Success 200 {object} errcode.Response{data=v1.LoginResponseData}
-// @Router /login [post]
+// @Success 201 {object} errcode.Response{data=v1.LoginResponseData}
+// @Router /api/v1/login [post]
 func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 	var req v1.LoginRequest
 	if err := ctx.Bind(&req); err != nil {
@@ -88,7 +88,7 @@ func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 // @Produce json
 // @Security Bearer
 // @Success 200 {object} errcode.Response{data=v1.GetProfileResponseData}
-// @Router /user [get]
+// @Router /api/v1/user [get]
 func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
 
@@ -113,7 +113,7 @@ func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 // @Security Bearer
 // @Param request body v1.UpdateProfileRequest true "params"
 // @Success 200 {object} errcode.Response
-// @Router /user [put]
+// @Router /api/v1/user [put]
 func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
 	userId := GetUserIdFromCtx(ctx)
 

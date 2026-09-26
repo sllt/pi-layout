@@ -1,5 +1,5 @@
 # Pi Layout - Air Configuration
-# Install: go install github.com/air-verse/air@latest
+# Install: make init
 # Usage:   air
 
 root = "."
@@ -11,7 +11,7 @@ tmp_dir = "tmp"
   # Binary file
   bin = "./tmp/server"
   # Extra arguments passed to the binary
-  args_bin = ["-c", "configs"]
+  args_bin = []
   # Watch these file extensions
   include_ext = ["go", "yaml", "yml"]
   # Watch these additional directories

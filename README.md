@@ -2,7 +2,7 @@
 
 基于 [Pi](https://github.com/sllt/pi) 框架的企业级 Go 应用脚手架（项目骨架）。
 
-项目由 `kite-layout` 更名而来，使用已发布的 `github.com/sllt/pi v0.3.0`。普通项目无需本地框架源码：
+项目由 `kite-layout` 更名而来，框架版本固定在 `go.mod`。普通项目无需本地框架源码：
 
 ```sh
 GOWORK=off go mod download
@@ -10,6 +10,17 @@ GOWORK=off go build ./...
 ```
 
 开发框架本身时可自行使用忽略提交的 go.work；发布验收使用 `GOWORK=off`。
+
+### 可重复生成与运行（v0.3.2）
+
+使用 Go 1.25.0 验收（最低版本见 go.mod）；`make init` 安装固定版本的 Pi、mockgen、swag、Air 和 protobuf 插件到项目 `.tools/bin`，生成另需 protoc 33.1。
+`make generator` 在临时目录生成、格式化并编译，再交付 proto/wrapper/mock/Swagger；保留手写的 `userservice_server.go`。`make check-generated` 只检查差异。
+`make unit`、`make race`、`make integration`、`make smoke`、`make container` 分别提供验证入口。Smoke 使用临时 SQLite、真实二进制 PID 和精确业务断言，退出时释放进程。
+
+本地配置不再跟踪：复制 `configs/.env.example` 到 `configs/.env`，设置随机 JWT 密钥；默认业务后端为 SQLite，运行前创建 `storage`。Compose 的 MySQL/Redis 通过 `--profile mysql` / `--profile redis` 显式启用，不能直接替代 SQLite 业务 SQL。
+根目录 Dockerfile 固定 Go 1.25.0，构建不运行 tidy，镜像包含 `server` / `task` / `migration` 三个入口，以 UID 10001 运行并包含 CA。运行时通过环境变量或只读配置挂载传入配置，`/app/storage` 需要可写；镜像不包含本地 .env、数据库和日志。已验证 Linux amd64；其他平台需在目标架构运行相同验收。
+
+v0.3.2 暂保留旧 HTTP 成功默认值：注册 202、登录 201、资料读取/修改 200。Swagger 与 smoke 已对齐，v0.4.1 再迁移为显式状态。
 
 ## 特性
 

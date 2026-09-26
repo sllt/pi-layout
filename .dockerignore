@@ -1,2 +1,12 @@
 .git
 .idea
+configs/.env
+**/.env
+storage
+tmp
+bin
+.tools
+go.work
+go.work.sum
+*.log
+coverage*

@@ -11,3 +11,6 @@ configs/.env
 # Local development workspace; release dependencies belong in go.mod.
 go.work
 go.work.sum
+.tools/
+bin/
+coverage*
