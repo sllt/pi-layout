@@ -22,11 +22,15 @@ func TestMain(m *testing.M) {
 	fmt.Println("begin")
 
 	// Set JWT_SECRET for tests
-	os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing")
+	os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing-32-bytes")
 
 	logger = log.NewLogger(logging.NewLogger(logging.INFO))
 	hdl = handler.NewHandler(logger)
-	jwt = jwt2.NewJwt(nil) // Pass nil since we don't need pi.App in tests
+	var err error
+	jwt, err = jwt2.NewJwt(nil)
+	if err != nil {
+		panic(err)
+	}
 
 	code := m.Run()
 	fmt.Println("test end")
@@ -35,7 +39,7 @@ func TestMain(m *testing.M) {
 }
 
 func genToken(t *testing.T) string {
-	token, err := jwt.GenToken(userId, time.Now().Add(time.Hour*24*90))
+	token, err := jwt.GenToken(userId, time.Now().Add(time.Hour))
 	if err != nil {
 		t.Error(err)
 		return token

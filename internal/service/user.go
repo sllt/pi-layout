@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/sllt/pi-layout/internal/model"
 	"github.com/sllt/pi-layout/internal/repository"
@@ -86,7 +85,7 @@ func (s *userService) Login(ctx context.Context, input *types.LoginInput) (*type
 	if err != nil {
 		return nil, errcode.ErrUnauthorized
 	}
-	token, err := s.jwt.GenToken(user.UserId, time.Now().Add(time.Hour*24*90))
+	token, err := s.jwt.Issue(user.UserId)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,6 @@ func NewHTTPServer(deps router.RouterDeps) {
 
 	// Register global middleware
 	app.Use(
-		middleware.CORSMiddleware(),
 		// NoStrictAuth runs globally: extracts JWT claims into context when token is present,
 		// but does not reject requests without a token. Strict routes are enforced by
 		// group-scoped Pi middleware in internal/router.

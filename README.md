@@ -112,6 +112,17 @@ make bootstrap
 
 ## 生命周期约定
 
+### v0.3.1 升级
+
+JWT 只从 `Authorization: Bearer <token>` 接受凭证，cookie/query/raw token 不再被识别。
+新 token 要求 HS256、有效 exp、配置的 issuer/audience 和一致的 subject/userId。
+`JWT_SECRET` 至少 32 字节且不能是示例值；`JWT_TTL` 默认 1h，`JWT_ISSUER` 默认 pi-layout，`JWT_AUDIENCE` 默认 pi-api。
+旧版缺少这些 claims 的 token 从本版起失效，升级服务后客户端需重新登录；不提供无截止日期的宽松解析兼容开关。
+`jwt.NewJwt` 现在返回 `(*JWT, error)`，Fx 会展示配置错误；自定义构造代码需处理 error，业务发 token 使用 `Issue(userID)`。
+
+CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；需要跨域时设置 `CORS_ALLOWED_ORIGINS`。
+端口可用 `HTTP_ADDR=127.0.0.1:0` 申请随机端口，`*_ENABLED=false` 明确禁用；TLS 配置错误不会回落明文。
+
 - `cmd/server` 使用 Fx 负责依赖装配，启动后通过 `piApp.RunContext(ctx)` 交给 Pi 管理 HTTP/gRPC/metrics 生命周期。
 - `cmd/server` 自己创建 signal context，避免 Fx `Run()` 和 Pi `Run()` 双重接管 OS signal。
 - Fx 只调用 `Start` / `Stop`，Pi app 由 `RunContext` 在同一个 context 下启动、阻塞和优雅停机。

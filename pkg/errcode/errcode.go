@@ -19,6 +19,9 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
+// PublicMessage marks this catalogued application message safe for clients.
+func (e *Error) PublicMessage() string { return e.Message }
+
 // Code implements pi's http.CodeResponder interface.
 // Returns the business error code for the JSON response "code" field.
 func (e *Error) Code() int {

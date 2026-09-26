@@ -30,10 +30,14 @@ func TestMain(m *testing.M) {
 	fmt.Println("begin")
 
 	// Set JWT_SECRET for tests
-	os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing")
+	os.Setenv("JWT_SECRET", "test-jwt-secret-key-for-testing-32-bytes")
 
 	logger = log.NewLogger(logging.NewLogger(logging.INFO))
-	j = jwt.NewJwt(nil) // Pass nil since we don't need pi.App in tests
+	var err error
+	j, err = jwt.NewJwt(nil)
+	if err != nil {
+		panic(err)
+	}
 	sf = sid.NewSid()
 
 	code := m.Run()
@@ -131,6 +135,7 @@ func TestUserService_Login(t *testing.T) {
 	}
 
 	mockUserRepo.EXPECT().GetByEmail(ctx, req.Email).Return(&model.User{
+		UserId:   "user-a",
 		Password: string(hashedPassword),
 	}, nil)
 

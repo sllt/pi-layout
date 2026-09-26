@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi-layout/pkg/jwt"
@@ -16,16 +17,16 @@ const ClaimsKey contextKey = "claims"
 func StrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenString := r.Header.Get("Authorization")
+			tokenString := bearerToken(r)
 			if tokenString == "" {
-				logger.Warnf("No token url=%s", r.URL)
+				logger.Warn("missing bearer token")
 				errcode.WriteHTTPError(w, r, errcode.ErrUnauthorized)
 				return
 			}
 
 			claims, err := j.ParseToken(tokenString)
 			if err != nil {
-				logger.Errorf("token error url=%s err=%v", r.URL, err)
+				logger.Warn("invalid bearer token")
 				errcode.WriteHTTPError(w, r, errcode.ErrUnauthorized)
 				return
 			}
@@ -39,16 +40,7 @@ func StrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler 
 func NoStrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenString := r.Header.Get("Authorization")
-			if tokenString == "" {
-				cookie, err := r.Cookie("accessToken")
-				if err == nil {
-					tokenString = cookie.Value
-				}
-			}
-			if tokenString == "" {
-				tokenString = r.URL.Query().Get("accessToken")
-			}
+			tokenString := bearerToken(r)
 			if tokenString == "" {
 				next.ServeHTTP(w, r)
 				return
@@ -64,4 +56,12 @@ func NoStrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handle
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func bearerToken(r *http.Request) string {
+	parts := strings.Fields(r.Header.Get("Authorization"))
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return ""
+	}
+	return parts[1]
 }
