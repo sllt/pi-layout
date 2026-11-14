@@ -19,7 +19,7 @@ func TestLoginThroughPublicTestkit(t *testing.T) {
 	users := mockservice.NewMockUserService(gomock.NewController(t))
 	users.EXPECT().Login(gomock.Any(), &types.LoginInput{Email: "a@example.com", Password: "test-password"}).Return(&types.LoginOutput{AccessToken: "test-token"}, nil)
 	h := handler.NewUserHandler(hdl, users)
-	app.POST("/login", h.Login)
+	require.NoError(t, pi.Register(app, h.Login))
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(`{"email":"a@example.com","password":"test-password"}`))
 	req.Header.Set("Content-Type", "application/json")
 	w := testkit.Request(t, app, req)

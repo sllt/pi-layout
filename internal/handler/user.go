@@ -6,7 +6,6 @@ import (
 	"github.com/sllt/pi-layout/internal/types"
 	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi/pkg/pi"
-	"github.com/sllt/pi/pkg/pi/http/response"
 )
 
 type UserHandler struct {
@@ -21,51 +20,23 @@ func NewUserHandler(handler *Handler, userService service.UserService) *UserHand
 	}
 }
 
-// Register godoc
-// @Summary 用户注册
-// @Schemes
-// @Description 目前只支持邮箱登录
-// @Tags 用户模块
-// @Accept json
-// @Produce json
-// @Param request body v1.RegisterRequest true "params"
-// @Success 201 {object} errcode.Response
-// @Router /api/v1/register [post]
-func (h *UserHandler) Register(ctx *pi.Context) (any, error) {
-	req := new(v1.RegisterRequest)
-	if err := ctx.Bind(req); err != nil {
-		return nil, err
-	}
-
+func (h *UserHandler) Register(ctx *pi.Context, req *v1.RegisterRequest) (*v1.RegisterResponse, error) {
 	input := &types.RegisterInput{
 		Email:    req.Email,
 		Password: req.Password,
 	}
 
 	if err := h.userService.Register(ctx, input); err != nil {
-		h.logger.Errorf("userService.Register error: %v", err)
+		if h.Handler != nil && h.logger != nil {
+			h.logger.Errorf("userService.Register error: %v", err)
+		}
 		return nil, err
 	}
 
-	return response.Created(nil), nil
+	return nil, nil
 }
 
-// Login godoc
-// @Summary 账号登录
-// @Schemes
-// @Description
-// @Tags 用户模块
-// @Accept json
-// @Produce json
-// @Param request body v1.LoginRequest true "params"
-// @Success 200 {object} errcode.Response{data=v1.LoginResponseData}
-// @Router /api/v1/login [post]
-func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
-	var req v1.LoginRequest
-	if err := ctx.Bind(&req); err != nil {
-		return nil, err
-	}
-
+func (h *UserHandler) Login(ctx *pi.Context, req *v1.LoginRequest) (*v1.LoginResponseData, error) {
 	input := &types.LoginInput{
 		Email:    req.Email,
 		Password: req.Password,
@@ -76,24 +47,14 @@ func (h *UserHandler) Login(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return response.OK(v1.LoginResponseData{
+	return &v1.LoginResponseData{
 		AccessToken: output.AccessToken,
-	}), nil
+	}, nil
 }
 
-// GetProfile godoc
-// @Summary 获取用户信息
-// @Schemes
-// @Description
-// @Tags 用户模块
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Success 200 {object} errcode.Response{data=v1.GetProfileResponseData}
-// @Router /api/v1/user [get]
-func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
+func (h *UserHandler) GetProfile(ctx *pi.Context, req *v1.GetProfileRequest) (*v1.GetProfileResponseData, error) {
 	userId := GetUserIdFromCtx(ctx)
-	if target := ctx.Param("userId"); target != "" && target != userId {
+	if req.UserId != "" && req.UserId != userId {
 		return nil, errcode.ErrForbidden
 	}
 
@@ -102,32 +63,16 @@ func (h *UserHandler) GetProfile(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return v1.GetProfileResponseData{
+	return &v1.GetProfileResponseData{
 		UserId:   output.UserId,
 		Nickname: output.Nickname,
 	}, nil
 }
 
-// UpdateProfile godoc
-// @Summary 修改用户信息
-// @Schemes
-// @Description
-// @Tags 用户模块
-// @Accept json
-// @Produce json
-// @Security Bearer
-// @Param request body v1.UpdateProfileRequest true "params"
-// @Success 204 "profile updated"
-// @Router /api/v1/user [put]
-func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
+func (h *UserHandler) UpdateProfile(ctx *pi.Context, req *v1.UpdateProfileRequest) (*v1.UpdateProfileResponse, error) {
 	userId := GetUserIdFromCtx(ctx)
-	if target := ctx.Param("userId"); target != "" && target != userId {
+	if req.UserId != "" && req.UserId != userId {
 		return nil, errcode.ErrForbidden
-	}
-
-	var req v1.UpdateProfileRequest
-	if err := ctx.Bind(&req); err != nil {
-		return nil, err
 	}
 
 	input := &types.UpdateProfileInput{
@@ -139,5 +84,5 @@ func (h *UserHandler) UpdateProfile(ctx *pi.Context) (any, error) {
 		return nil, err
 	}
 
-	return response.NoContent(), nil
+	return nil, nil
 }

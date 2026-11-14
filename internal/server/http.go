@@ -25,7 +25,9 @@ func NewHTTPServer(deps router.RouterDeps) error {
 	})
 
 	// Register user routes (HTTP)
-	router.InitUserRouter(deps)
+	if err := router.InitUserRouter(deps); err != nil {
+		return err
+	}
 
 	return NewUserGRPCServer(app, deps.JWT, deps.UserService)
 }

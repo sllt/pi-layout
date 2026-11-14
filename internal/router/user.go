@@ -21,16 +21,25 @@ func requireAuthMiddleware() pi.PiMiddleware {
 // Token parsing is handled globally via NoStrictAuth middleware (which sets claims
 // when a token is present but doesn't reject requests without one).
 // Protected routes use a group-scoped Pi middleware for strict auth.
-func InitUserRouter(deps RouterDeps) {
-	apiV1 := deps.App.Group("/api/v1")
+func InitUserRouter(deps RouterDeps) error {
+	apiV1 := deps.App.Group("/api/v1").WithDoc(pi.DocTags("用户模块"))
 
 	// No authentication required
-	apiV1.POST("/register", deps.UserHandler.Register)
-	apiV1.POST("/login", deps.UserHandler.Login)
+	if err := pi.Register(apiV1, deps.UserHandler.Register); err != nil {
+		return err
+	}
+	if err := pi.Register(apiV1, deps.UserHandler.Login); err != nil {
+		return err
+	}
 
 	// Token required
-	userGroup := apiV1.Group("/user")
-	userGroup.UseMiddleware(requireAuthMiddleware())
-	userGroup.GET("/", deps.UserHandler.GetProfile)
-	userGroup.PUT("/", deps.UserHandler.UpdateProfile)
+	userGroup := apiV1.Group("/user").UseMiddleware(requireAuthMiddleware()).WithDoc(pi.DocSecurity("Bearer"))
+	if err := pi.Register(userGroup, deps.UserHandler.GetProfile); err != nil {
+		return err
+	}
+	if err := pi.Register(userGroup, deps.UserHandler.UpdateProfile); err != nil {
+		return err
+	}
+
+	return deps.App.RouteError()
 }

@@ -1,5 +1,11 @@
 # Pi Layout
 
+### v0.5.0 类型化路由、OpenAPI 3.0.3 与受监督任务
+
+- **泛型 Typed Handler 与装配期契约校验**：`internal/router` 与 `internal/handler` 升级为 `pi.POST` / `pi.GET` / `pi.PUT` 泛型类型化路由，DTO 统一声明 `json` 与 `validate` 标签，`NewHTTPServer` 在构造阶段通过 `app.RouteError()` 拒绝无效路由或契约配置。
+- **零 `swag` 依赖的 OpenAPI 3.0.3 与离线 Scalar UI**：新增 `cmd/openapi` 从真实路由表直接生成 `docs/openapi.json` 与 `docs/openapi.yaml`（`make openapi` / `make check-generated`）；通过 `OPENAPI_ENABLED=true` 可按需开启在线契约与内置离线 Scalar API 文档页面（`/.well-known/swagger`）。
+- **内置受监督 Cron 调度**：移除外部 `gocron` 依赖，`cmd/task` 直接使用 Pi 受监督 Cron（`CronSkipIfRunning` 防重入、UTC 调度与停机优雅排空）。
+
 ### v0.4.1 业务契约升级
 
 - 身份统一为 Pi Principal。HTTP 本人资料取已验证主体，跨用户 query 被拒绝；gRPC 的 user_id 仍经 service 授权，普通用户不能访问他人。可信任务可显式授予 `users:read:any` / `users:write:any`，模板 JWT 不颁发这些权限。
@@ -33,16 +39,14 @@ GOWORK=off go build ./...
 
 开发框架本身时可自行使用忽略提交的 go.work；发布验收使用 `GOWORK=off`。
 
-开发本脚手架或生成应用时，使用框架仓库统一维护的 [pi-dev skill](https://github.com/sllt/pi/tree/master/skills/pi-dev)（本机安装后调用 `$pi-dev`）；按实际依赖版本核对说明。
-
 ### 可重复生成与运行（v0.3.2）
 
-使用 Go 1.25.0 验收（最低版本见 go.mod）；`make init` 安装固定版本的 Pi、mockgen、swag、Air 和 protobuf 插件到项目 `.tools/bin`，生成另需 protoc 33.1。
-`make generator` 在临时目录生成、格式化并编译，再交付 proto/wrapper/mock/Swagger；保留手写的 `userservice_server.go`。`make check-generated` 只检查差异。
+使用 Go 1.27.0 验收（最低版本见 go.mod）；`make init` 安装固定版本的 Pi、mockgen、Air 和 protobuf 插件到项目 `.tools/bin`，生成另需 protoc 33.1。
+`make generator` 在临时目录生成、格式化并编译，再交付 proto/wrapper/mock/OpenAPI（`docs/openapi.json`、`docs/openapi.yaml`）；保留手写的 `userservice_server.go`。`make check-generated` 只检查差异。
 `make unit`、`make race`、`make integration`、`make smoke`、`make container` 分别提供验证入口。Smoke 使用临时 SQLite、真实二进制 PID 和精确业务断言，退出时释放进程。
 
 本地配置不再跟踪：复制 `configs/.env.example` 到 `configs/.env`，设置随机 JWT 密钥；默认业务后端为 SQLite，运行前创建 `storage`。Compose 的 MySQL/Redis 通过 `--profile mysql` / `--profile redis` 显式启用，不能直接替代 SQLite 业务 SQL。
-根目录 Dockerfile 固定 Go 1.25.0，构建不运行 tidy，镜像包含 `server` / `task` / `migration` 三个入口，以 UID 10001 运行并包含 CA。运行时通过环境变量或只读配置挂载传入配置，`/app/storage` 需要可写；镜像不包含本地 .env、数据库和日志。已验证 Linux amd64；其他平台需在目标架构运行相同验收。
+根目录 Dockerfile 固定 Go 1.27.0，构建不运行 tidy，镜像包含 `server` / `task` / `migration` 三个入口，以 UID 10001 运行并包含 CA。运行时通过环境变量或只读配置挂载传入配置，`/app/storage` 需要可写；镜像不包含本地 .env、数据库和日志。已验证 Linux amd64；其他平台需在目标架构运行相同验收。
 
 升级旧客户端时注意：v0.3.2 的注册 202/登录 201/修改 200 已在 v0.4.1 改为 201/200/204；204 不再解析 JSON。
 
@@ -52,13 +56,14 @@ GOWORK=off go build ./...
 - **依赖注入** - 使用 [Fx](https://github.com/uber-go/fx) 管理依赖图与入口装配
 - **数据库支持** - 基于 Pi 的 SQL 抽象，支持事务
 - **JWT 认证** - 全局解析令牌 + 受保护路由强制鉴权
-- **定时任务** - 集成 gocron 调度
+- **定时任务** - 基于 Pi 内置受监督 Cron 调度（支持重入保护与优雅停机排空）
 - **数据库迁移** - 内置迁移入口
 - **可观测性** - 集成 OpenTelemetry 与 Prometheus
 
 ## 目录概览
 
 - `cmd/server`：HTTP 服务入口（gRPC 用户示例默认不注册）
+- `cmd/openapi`：OpenAPI 3.0.3 文档离线导出入口（输出 `docs/openapi.json` / `docs/openapi.yaml`）
 - `cmd/migration`：数据库迁移入口
 - `cmd/task`：定时任务入口
 - `internal/handler`：接口层（协议适配）
@@ -67,7 +72,7 @@ GOWORK=off go build ./...
 - `internal/router`：路由与鉴权包装
 - `internal/server`：HTTP / task 的运行时注册；`internal/migrationcmd`：一次性迁移命令
 - `internal/bootstrap`：Fx modules 与基础构造函数
-- `docs/architecture`：架构与业务模块开发约定
+- `docs`：生成的 OpenAPI 3.0.3 规范文件（`openapi.json` / `openapi.yaml`）
 - `pkg/config`：环境配置约定
 
 ## 快速开始
@@ -103,7 +108,6 @@ go run ./cmd/migration status
 
 随项目提供的 users/user_profiles DDL 仅支持 SQLite，命令会拒绝其他方言；
 切换 MySQL/PostgreSQL 时应先修改业务 DDL 与此方言检查。Pi 框架自身支持这些迁移后端。
-完整说明见 [迁移命令](docs/migration.md)。
 
 如需新增迁移模板：
 
@@ -129,8 +133,8 @@ go run ./cmd/task
 
 ```bash
 make test     # 运行测试并生成覆盖率报告
-make build    # 构建 server 二进制
-make swag     # 生成 swagger 文档
+make build    # 构建 server / task / migration / openapi 二进制
+make openapi  # 生成 docs/openapi.json 与 docs/openapi.yaml（保留 make swag 别名）
 make bootstrap
 ```
 
@@ -162,7 +166,7 @@ CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；
 - `cmd/server` 自己创建 signal context，避免 Fx `Run()` 和 Pi `Run()` 双重接管 OS signal。
 - Fx Hook 启动/关闭 Build app；RunContext 等待运行结果和进程取消，启动预算与运行期 context 分离。
 - `cmd/migration` 是一次性入口，通过 `run(ctx) error` 传递失败，仅打开所需 SQL 连接；每次执行均关闭连接，不启动 HTTP/gRPC/metrics。
-- `cmd/task` 由 Fx 管理进程，gocron scheduler 在 Pi.Go 中运行，任务退出后才释放 SQL。
+- `cmd/task` 由 Fx 管理进程，通过 `app.AddCron` 注册到 Pi 内置受监督 Cron（`CronSkipIfRunning` 防重入，`time.UTC`），`Start` 后才开始触发，在途任务退出后才释放 SQL。
 
 ## 鉴权策略
 
@@ -178,13 +182,13 @@ CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；
 
 ## 业务模块开发
 
-新增业务模块建议参考 `docs/architecture/module.md`。当前 `user` 模块已经演示：
+当前 `user` 模块已经演示：
 
 - API DTO、domain types、model、repository、service、handler、router 的分层边界；
 - 注册用户时在一个事务内同时创建账号记录和用户资料记录；
 - 更新资料时在一个事务内同时更新账号邮箱和资料昵称。
 
-错误码与响应 envelope 约定参考 `docs/architecture/error.md`。Handler / Service 直接返回 `pkg/errcode`，`net/http` middleware 使用 `errcode.WriteHTTPError`，避免重复手写 JSON 响应。
+Handler / Service 直接返回 `pkg/errcode`，`net/http` middleware 使用 `errcode.WriteHTTPError`，避免重复手写 JSON 响应。
 
 ## 测试
 

@@ -3,33 +3,26 @@ package server
 import (
 	"time"
 
-	"github.com/go-co-op/gocron"
 	"github.com/sllt/pi-layout/internal/task"
 	"github.com/sllt/pi-layout/pkg/log"
 	"github.com/sllt/pi/pkg/pi"
 )
 
-// The scheduler is a managed worker: jobs receive runtime cancellation and Stop
-// waits for the scheduler before closing SQL, including fatal runtime shutdown.
-func RegisterTaskServer(app *pi.App, logger *log.Logger, userTask task.UserTask) {
-	app.Go("task-scheduler", func(ctx *pi.Context) error {
-		scheduler := gocron.NewScheduler(time.UTC)
-		defer scheduler.Stop()
-		_, err := scheduler.CronWithSeconds("0/3 * * * * *").Do(func() {
-			defer func() {
-				if p := recover(); p != nil {
-					logger.Errorf("CheckUser panic: %v", p)
-				}
-			}()
-			if err := userTask.CheckUser(ctx.Context); err != nil {
-				logger.Errorf("CheckUser error: %v", err)
-			}
-		})
-		if err != nil {
+// RegisterTaskServer registers scheduled tasks under Pi's supervised cron runtime.
+// Compared to the prior gocron v1.37.0 wrapper:
+//   - No goroutine starts during Fx construction; scheduling starts in App.Start;
+//   - Schedule ("0/3 * * * * *") and timezone (time.UTC) match gocron's CronWithSeconds;
+//   - Overlap uses CronSkipIfRunning so slow CheckUser runs cannot pile up on SQLite;
+//   - App.Stop cancels in-flight task contexts and waits for task exit before closing Owned SQL.
+func RegisterTaskServer(app *pi.App, logger *log.Logger, userTask task.UserTask) error {
+	return app.AddCron("0/3 * * * * *", "check-user", func(ctx *pi.Context) error {
+		if err := userTask.CheckUser(ctx.Context); err != nil {
+			logger.Errorf("CheckUser error: %v", err)
 			return err
 		}
-		scheduler.StartAsync()
-		<-ctx.Done()
-		return ctx.Err()
+		return nil
+	}, pi.CronJobOptions{
+		Overlap:  pi.CronSkipIfRunning,
+		Location: time.UTC,
 	})
 }
