@@ -25,7 +25,6 @@ import (
 	"github.com/sllt/pi/pkg/pi/apperror"
 	"github.com/sllt/pi/pkg/pi/auth"
 	piGRPC "github.com/sllt/pi/pkg/pi/grpc"
-	"github.com/sllt/pi/pkg/pi/migration"
 	"github.com/sllt/pi/pkg/pi/testkit"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -53,12 +52,12 @@ func newBusinessFixture(t *testing.T) *businessFixture {
 	l := log.NewLogger(a.Logger())
 	tokens, err := jwt.NewJwt(a)
 	require.NoError(t, err)
-	r := repository.NewRepository(l, a.Container().SQL)
+	r := repository.NewRepository(l, a.SQL())
 	accounts := repository.NewUserRepository(r)
 	profiles := repository.NewUserProfileRepository(r)
 	users := service.NewUserService(service.NewService(r, l, sid.NewSid(), tokens), accounts, profiles)
 	require.NoError(t, NewHTTPServer(router.RouterDeps{App: a, Logger: l, JWT: tokens, UserService: users, UserHandler: handler.NewUserHandler(handler.NewHandler(l), users)}))
-	a.OnStart(func(ctx *pi.Context) error { _, err := migration.Run(ctx, migrations.All(), ctx.Container); return err })
+	a.OnStart(func(ctx *pi.Context) error { _, err := a.MigrateContext(ctx, migrations.All()); return err })
 	require.NoError(t, a.Start(t.Context()))
 	conn, err := grpc.NewClient(a.GRPCAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
@@ -262,7 +261,7 @@ func TestProfileUpdateDoesNotOverwriteConcurrentPassword(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "new-password-hash", u.Password)
 	require.Equal(t, "after@example.com", u.Email)
-	_, err = f.app.Container().SQL.ExecContext(t.Context(), "DELETE FROM users WHERE user_id = ?", id)
+	_, err = f.app.SQL().ExecContext(t.Context(), "DELETE FROM users WHERE user_id = ?", id)
 	require.NoError(t, err)
 	err = f.accounts.UpdateEmail(t.Context(), id, "deleted@example.com")
 	requireKind(t, err, apperror.NotFound)
@@ -292,7 +291,7 @@ func TestDeletionDuringProfileUpdateRollsBackEmail(t *testing.T) {
 		done <- users.UpdateProfile(auth.WithPrincipal(t.Context(), auth.Principal{Subject: id}), id, &types.UpdateProfileInput{Email: "rollback@example.com", Nickname: "late update"})
 	}()
 	<-paused.loaded
-	_, err := f.app.Container().SQL.ExecContext(t.Context(), "DELETE FROM user_profiles WHERE user_id = ?", id)
+	_, err := f.app.SQL().ExecContext(t.Context(), "DELETE FROM user_profiles WHERE user_id = ?", id)
 	require.NoError(t, err)
 	unblock()
 	requireKind(t, <-done, apperror.NotFound)

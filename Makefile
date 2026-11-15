@@ -1,5 +1,5 @@
 GO ?= go
-PI_VERSION ?= v0.5.0
+PI_VERSION ?= v0.5.1
 TOOLS := $(CURDIR)/.tools/bin
 export PATH := $(TOOLS):$(PATH)
 

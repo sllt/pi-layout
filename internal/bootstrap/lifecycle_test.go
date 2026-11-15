@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/sllt/pi/pkg/pi"
-	"github.com/sllt/pi/pkg/pi/infra"
+	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
 )
@@ -20,10 +20,11 @@ func TestFXStableDatabaseAndStartupContext(t *testing.T) {
 		t.Setenv(k, v)
 	}
 	var app *pi.App
-	var db infra.DB
+	var db piSQL.Client
 	f := fx.New(CoreModule, fx.Populate(&app, &db), fx.NopLogger)
 	require.NoError(t, f.Err())
 	require.NotNil(t, db)
+	require.NotNil(t, app.Logger())
 	_, err := os.Stat(dbPath)
 	require.True(t, os.IsNotExist(err))
 	workerContext := make(chan context.Context, 1)
@@ -33,7 +34,9 @@ func TestFXStableDatabaseAndStartupContext(t *testing.T) {
 	cancel()
 	runtimeCtx := <-workerContext
 	require.NoError(t, runtimeCtx.Err())
-	require.Same(t, db, app.Container().SQL)
+	require.Same(t, db, app.SQL())
+	snap := app.RuntimeSnapshot()
+	require.NotEmpty(t, snap.Resources)
 	_, err = db.ExecContext(t.Context(), "CREATE TABLE fixture (id INTEGER)")
 	require.NoError(t, err)
 	require.NoError(t, f.Stop(t.Context()))

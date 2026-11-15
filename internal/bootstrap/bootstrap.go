@@ -2,12 +2,13 @@ package bootstrap
 
 import (
 	"context"
+	"os"
+
 	"github.com/sllt/pi-layout/pkg/log"
 	"github.com/sllt/pi/pkg/pi"
 	"github.com/sllt/pi/pkg/pi/config"
-	"github.com/sllt/pi/pkg/pi/infra"
+	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
 	"go.uber.org/fx"
-	"os"
 )
 
 // NewPiApp creates a new pi.App.
@@ -45,12 +46,12 @@ func RegisterRuntime(lc fx.Lifecycle, app *pi.App, shutdowner fx.Shutdowner) {
 	}, OnStop: app.Stop})
 }
 
-// NewLogger extracts pi's logger from the container and wraps it.
+// NewLogger extracts pi's logger from the app runtime and wraps it.
 func NewLogger(app *pi.App) *log.Logger {
-	return log.NewLogger(app.Container().Logger)
+	return log.NewLogger(app.Logger())
 }
 
-// NewDB extracts infra.DB from the pi app's container.
-func NewDB(app *pi.App) infra.DB {
-	return app.Container().SQL
+// NewDB extracts sql.Client from the pi app runtime.
+func NewDB(app *pi.App) piSQL.Client {
+	return app.SQL()
 }

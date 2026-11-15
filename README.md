@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.0-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.1-blue)](https://github.com/sllt/pi)
 
 English | [简体中文](./README.zh-CN.md)
 
@@ -12,10 +12,10 @@ English | [简体中文](./README.zh-CN.md)
 ## Features
 
 - **Clean Layered Architecture** — Strict separation across `API DTO / Proto → Handler → Service → Repository → Model`, sharing domain validation and authorization rules across HTTP, gRPC, and background tasks.
-- **Explicit Fx + `pi.Build` Lifecycle** — Fx constructors allocate side-effect-free handles; `OnStart` activates managed SQL and Pi runtime components, while `OnStop` drains in-flight work before releasing resources in reverse order.
-- **Typed HTTP Contracts & OpenAPI 3.0.3** — Routes use generic `pi.Register` and `pi.Meta` DTOs with pre-flight validation (`app.RouteError()`). `cmd/openapi` exports deterministic `docs/openapi.json` and `docs/openapi.yaml` without `swag` comments, and `OPENAPI_ENABLED=true` serves live specs plus the built-in offline Scalar UI (`/.well-known/swagger`).
+- **Explicit Fx + `pi.Build` Microkernel Lifecycle** — Fx constructors extract side-effect-free `sql.Client` (`app.SQL()`) and `app.Logger()` handles; `OnStart` activates managed SQL and any mounted adapters (`pi.WithAdapter` / `pi.Use[T]`), while `OnStop` drains in-flight work before releasing resources in reverse order.
+- **Typed HTTP Contracts & OpenAPI 3.0.3** — Routes use generic `pi.Register` and `pi.Meta` DTOs with pre-flight validation (`app.RouteError()`). `cmd/openapi` exports deterministic `docs/openapi.json` and `docs/openapi.yaml` without `swag` comments, and `OPENAPI_SERVE_SPEC=true` / `OPENAPI_SERVE_UI=true` serve live specs plus the built-in offline Scalar UI (`/.well-known/swagger`).
 - **Unified Identity & Authorization** — Verified `Bearer` JWT tokens (`HS256` with `iss`, `aud`, `exp`, and matching `sub`) establish a `pi/auth.Principal` at the transport edge; services enforce self-or-permission checks (`users:read:any`, `users:write:any`).
-- **Safe SQL Transactions & One-Shot Migrations** — Repositories compose transactions via `BeginTxContext` with nested save/rollback safety. `cmd/migration` runs lock-protected schema plans and upgrades (`up`, `plan`, `status`, `--dry-run`) without starting HTTP/gRPC listeners.
+- **Safe SQL Transactions & One-Shot Migrations** — Repositories compose transactions via `sql.Client.BeginTxContext` and verify ownership via `sql.Client.Owns` with nested rollback-only safety. `cmd/migration` runs lock-protected schema plans and upgrades (`app.MigrateContext` / `app.MigrationPlanContext` / `app.MigrationStatusContext`) without starting HTTP/gRPC listeners.
 - **Supervised Cron Tasks** — `cmd/task` schedules jobs on Pi's built-in actor-supervised Cron runtime (`CronSkipIfRunning` overlap protection in `time.UTC`) with graceful shutdown draining.
 - **Reproducible Codegen & Containerization** — `make generator` compiles staged protobuf, gRPC wrapper, mock, and OpenAPI outputs before publishing; the root `Dockerfile` builds a minimal non-root (`UID 10001`) multi-binary image (`server`, `task`, `migration`).
 
@@ -26,7 +26,7 @@ English | [简体中文](./README.zh-CN.md)
 ### Option A: Scaffold a New Project via `pi` CLI (Recommended)
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.0
+go install github.com/sllt/pi/cmd/pi@v0.5.1
 pi init --module example.com/acme/orders ./orders
 cd ./orders
 ```
@@ -58,7 +58,7 @@ go run ./cmd/migration status
 go run ./cmd/server
 ```
 
-To enable live OpenAPI 3.0.3 endpoints (`/.well-known/openapi.json`, `/.well-known/openapi.yaml`) and the built-in offline Scalar UI (`/.well-known/swagger`), set `OPENAPI_ENABLED=true` in `configs/.env` or your environment.
+To enable live OpenAPI 3.0.3 endpoints (`/.well-known/openapi.json`, `/.well-known/openapi.yaml`) and the built-in offline Scalar UI (`/.well-known/swagger`), set `OPENAPI_SERVE_SPEC=true` and `OPENAPI_SERVE_UI=true` in `configs/.env` or your environment.
 
 #### 4. Start the Scheduled Task Runner (Optional)
 

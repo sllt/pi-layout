@@ -20,13 +20,21 @@ import (
 
 var logger *log.Logger
 
-// testDB wraps *sql.DB to satisfy infra.DB interface for testing.
+// testDB wraps *sql.DB to satisfy piSQL.Client interface for testing.
 type testDB struct {
 	*sql.DB
 }
 
 func (t *testDB) Begin() (*piSQL.Tx, error) {
 	return nil, errors.New("not implemented in test")
+}
+
+func (t *testDB) BeginTxContext(ctx context.Context, opts *sql.TxOptions) (*piSQL.Tx, error) {
+	tx, err := t.DB.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &piSQL.Tx{Tx: tx}, nil
 }
 
 func (t *testDB) Select(ctx context.Context, data any, query string, args ...any) error {
@@ -74,6 +82,10 @@ func (t *testDB) Select(ctx context.Context, data any, query string, args ...any
 }
 
 func (t *testDB) HealthCheck() *datasource.Health { return nil }
+
+func (t *testDB) HealthCheckContext(context.Context) *datasource.Health { return nil }
+
+func (t *testDB) Owns(*piSQL.Tx) bool { return true }
 
 func (t *testDB) Dialect() string { return "mysql" }
 

@@ -4,12 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"reflect"
 	"sync"
 
 	"github.com/sllt/pi-layout/pkg/log"
 	piSQL "github.com/sllt/pi/pkg/pi/datasource/sql"
-	"github.com/sllt/pi/pkg/pi/infra"
 )
 
 var ErrCrossDatabaseTransaction = errors.New("transaction belongs to a different database")
@@ -19,7 +17,6 @@ var ErrTransactionOptions = errors.New("nested transaction cannot change options
 type txKey struct{}
 type transactionScope struct {
 	tx      *piSQL.Tx
-	owner   infra.DB
 	options sql.TxOptions
 	mu      sync.Mutex
 	failure error
@@ -33,11 +30,11 @@ func (s *transactionScope) fail(err error) {
 func (s *transactionScope) failureError() error { s.mu.Lock(); defer s.mu.Unlock(); return s.failure }
 
 type Repository struct {
-	db     infra.DB
+	db     piSQL.Client
 	logger *log.Logger
 }
 
-func NewRepository(logger *log.Logger, db infra.DB) *Repository {
+func NewRepository(logger *log.Logger, db piSQL.Client) *Repository {
 	return &Repository{db: db, logger: logger}
 }
 
@@ -52,12 +49,9 @@ type TransactionWithOptions interface {
 
 func NewTransaction(r *Repository) Transaction { return r }
 
-func sameDB(a, b infra.DB) bool {
-	return a != nil && b != nil && reflect.TypeOf(a) == reflect.TypeOf(b) && reflect.TypeOf(a).Comparable() && a == b
-}
 func (r *Repository) GetQuerier(ctx context.Context) piSQL.Executor {
 	if scope, ok := ctx.Value(txKey{}).(*transactionScope); ok {
-		if !sameDB(scope.owner, r.db) {
+		if r.db == nil || !r.db.Owns(scope.tx) {
 			scope.fail(ErrCrossDatabaseTransaction)
 			return piSQL.ErrorExecutor(ErrCrossDatabaseTransaction)
 		}
@@ -65,9 +59,11 @@ func (r *Repository) GetQuerier(ctx context.Context) piSQL.Executor {
 	}
 	return r.db
 }
+
 func (r *Repository) Transaction(ctx context.Context, fn func(context.Context) error) error {
 	return r.TransactionWithOptions(ctx, nil, fn)
 }
+
 func (r *Repository) TransactionWithOptions(ctx context.Context, opts *sql.TxOptions, fn func(context.Context) error) (err error) {
 	if err = ctx.Err(); err != nil {
 		return err
@@ -80,7 +76,7 @@ func (r *Repository) TransactionWithOptions(ctx context.Context, opts *sql.TxOpt
 		normalized = *opts
 	}
 	if scope, ok := ctx.Value(txKey{}).(*transactionScope); ok {
-		if !sameDB(scope.owner, r.db) {
+		if r.db == nil || !r.db.Owns(scope.tx) {
 			scope.fail(ErrCrossDatabaseTransaction)
 			return ErrCrossDatabaseTransaction
 		}
@@ -99,20 +95,17 @@ func (r *Repository) TransactionWithOptions(ctx context.Context, opts *sql.TxOpt
 		}()
 		return fn(ctx)
 	}
-	starter, ok := r.db.(interface {
-		BeginTxContext(context.Context, *sql.TxOptions) (*piSQL.Tx, error)
-	})
-	if !ok {
-		return errors.New("database adapter must implement BeginTxContext for context-aware transactions")
+	if r.db == nil {
+		return errors.New("database client is nil")
 	}
-	tx, err := starter.BeginTxContext(ctx, opts)
+	tx, err := r.db.BeginTxContext(ctx, opts)
 	if err != nil {
 		return err
 	}
 	// Also covers runtime.Goexit inside a callback. Normal paths below retain
 	// meaningful rollback errors; a finished transaction returns ErrTxDone here.
 	defer tx.Rollback()
-	scope := &transactionScope{tx: tx, owner: r.db, options: normalized}
+	scope := &transactionScope{tx: tx, options: normalized}
 	rollback := func() error {
 		e := tx.Rollback()
 		if errors.Is(e, sql.ErrTxDone) {

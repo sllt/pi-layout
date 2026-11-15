@@ -150,7 +150,6 @@ func execute(ctx context.Context, o options, s *summary, stderr io.Writer) (err 
 			err = errors.Join(err, fmt.Errorf("close migration database: %w", closeErr))
 		}
 	}()
-	c := app.Container()
 	opts := []migration.Option{migration.WithTarget(o.target)}
 	switch o.command {
 	case "up":
@@ -162,7 +161,7 @@ func execute(ctx context.Context, o options, s *summary, stderr io.Writer) (err 
 		if o.dryRun {
 			opts = append(opts, migration.WithDryRun())
 		}
-		result, runErr := migration.Run(ctx, migrations.All(), c, opts...)
+		result, runErr := app.MigrateContext(ctx, migrations.All(), opts...)
 		s.StateSource, s.StatePrecise = result.StateSource, result.StatePrecise
 		s.Applied, s.Skipped = versions(result.Applied), versions(result.Skipped)
 		if result.Failed != nil {
@@ -171,7 +170,7 @@ func execute(ctx context.Context, o options, s *summary, stderr io.Writer) (err 
 		}
 		return runErr
 	case "plan":
-		result, planErr := migration.Plan(ctx, migrations.All(), c, opts...)
+		result, planErr := app.MigrationPlanContext(ctx, migrations.All(), opts...)
 		s.StateSource, s.StatePrecise = result.StateSource, result.StatePrecise
 		for _, item := range result.Items {
 			s.Plan = append(s.Plan, planItem{item.Version, item.Name, item.Action, item.Reason})
@@ -184,7 +183,7 @@ func execute(ctx context.Context, o options, s *summary, stderr io.Writer) (err 
 		}
 		return planErr
 	case "status":
-		result, statusErr := migration.Status(ctx, migrations.All(), c, opts...)
+		result, statusErr := app.MigrationStatusContext(ctx, migrations.All(), opts...)
 		s.StateSource, s.StatePrecise = result.StateSource, result.StatePrecise
 		s.Applied, s.Pending = versions(result.Applied), versions(result.Pending)
 		s.Gaps = append(s.Gaps, result.Gaps...)

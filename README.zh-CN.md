@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.0-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.1-blue)](https://github.com/sllt/pi)
 
 [English](./README.md) | 简体中文
 
@@ -12,10 +12,10 @@
 ## 核心特性
 
 - **清晰的分层架构** — 严格划分 `API DTO / Proto → Handler → Service → Repository → Model` 职责边界，在 HTTP、gRPC 与后台任务之间复用统一的业务校验与授权逻辑。
-- **显式 Fx + `pi.Build` 生命周期** — Fx 构造期仅分配无副作用的稳定句柄；`OnStart` 按序激活受管 SQL 与 Pi 运行时，`OnStop` 等待在途请求与任务排空后再逆序释放资源。
-- **类型化 HTTP 契约与 OpenAPI 3.0.3** — 路由层采用 `pi.Register` 泛型注册与 `pi.Meta` DTO 标签，构造期通过 `app.RouteError()` 预检路由与校验规则。`cmd/openapi` 无需 `swag` 注释即可直接生成确定性的 `docs/openapi.json` 与 `docs/openapi.yaml`；设置 `OPENAPI_ENABLED=true` 可在线开启规范端点与内置离线 Scalar API 文档界面（`/.well-known/swagger`）。
+- **显式 Fx + `pi.Build` 微内核生命周期** — Fx 构造期仅提取无副作用的稳定 `sql.Client`（`app.SQL()`）与 `app.Logger()` 句柄；`OnStart` 按序激活受管 SQL 与扩展适配器（`pi.WithAdapter` / `pi.Use[T]`），`OnStop` 等待在途请求与任务排空后再逆序释放资源。
+- **类型化 HTTP 契约与 OpenAPI 3.0.3** — 路由层采用 `pi.Register` 泛型注册与 `pi.Meta` DTO 标签，构造期通过 `app.RouteError()` 预检路由与校验规则。`cmd/openapi` 无需 `swag` 注释即可直接生成确定性的 `docs/openapi.json` 与 `docs/openapi.yaml`；设置 `OPENAPI_SERVE_SPEC=true` 与 `OPENAPI_SERVE_UI=true` 可在线开启规范端点与内置离线 Scalar API 文档界面（`/.well-known/swagger`）。
 - **统一身份与业务层授权** — 传输层仅从已验证的 `Authorization: Bearer <token>`（强制校验 `HS256`、`iss`、`aud`、`exp` 与 `sub`）建立 `pi/auth.Principal` 主体；Service 层统一执行本人或管理权限（`users:read:any`、`users:write:any`）判定。
-- **安全 SQL 事务与一次性迁移入口** — Repository 基于 `BeginTxContext` 封装事务及嵌套回滚保护；`cmd/migration` 提供带锁迁移执行与状态检查（`up`、`plan`、`status`、`--dry-run`），不启动任何网络端口。
+- **安全 SQL 事务与一次性迁移入口** — Repository 基于 `sql.Client.BeginTxContext` 与 `Owns` 封装事务、跨库隔离及嵌套回滚保护；`cmd/migration` 直接调用 `app.MigrateContext` / `app.MigrationPlanContext` / `app.MigrationStatusContext` 提供带锁迁移执行与状态检查（`up`、`plan`、`status`、`--dry-run`），不启动任何网络端口。
 - **受监督 Cron 定时任务** — `cmd/task` 基于 Pi 内置 Actor 受监督 Cron 调度器运行（默认 `CronSkipIfRunning` 防重入、`time.UTC` 时区），支持优雅停机排空。
 - **可重复代码生成与容器化交付** — `make generator` 先在临时隔离目录生成、格式化并编译验证 Protobuf、gRPC wrapper、Mock 与 OpenAPI 产物后再落盘（自动保留手写 `userservice_server.go`）；根目录 `Dockerfile` 构建非 root（`UID 10001`）多入口最小运行镜像（`server` / `task` / `migration`）。
 
@@ -26,7 +26,7 @@
 ### 方式一：通过 `pi` CLI 初始化新项目（推荐）
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.0
+go install github.com/sllt/pi/cmd/pi@v0.5.1
 pi init --module example.com/acme/orders ./orders
 cd ./orders
 ```
@@ -58,7 +58,7 @@ go run ./cmd/migration status
 go run ./cmd/server
 ```
 
-如需开启在线 OpenAPI 3.0.3 规范端点（`/.well-known/openapi.json`、`/.well-known/openapi.yaml`）与内置离线 Scalar 文档页（`/.well-known/swagger`），可在环境变量或 `configs/.env` 中设置 `OPENAPI_ENABLED=true`。
+如需开启在线 OpenAPI 3.0.3 规范端点（`/.well-known/openapi.json`、`/.well-known/openapi.yaml`）与内置离线 Scalar 文档页（`/.well-known/swagger`），可在环境变量或 `configs/.env` 中设置 `OPENAPI_SERVE_SPEC=true` 与 `OPENAPI_SERVE_UI=true`。
 
 #### 4. 启动定时任务进程（可选）
 

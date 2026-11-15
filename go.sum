@@ -45,8 +45,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dgraph-io/dgo/v210 v210.0.0-20230328113526-b66f8ae53a2d h1:abDbP7XBVgwda+h0J5Qra5p2OQpidU2FdkXvzCKL+H8=
-github.com/dgraph-io/dgo/v210 v210.0.0-20230328113526-b66f8ae53a2d/go.mod h1:wKFzULXAPj3U2BDAPWXhSbQQNC6FU1+1/5iika6IY7g=
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/rVNCu3HqELle0jiPLLBs70cWOduZpkS1E78=
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/duke-git/lancet/v2 v2.3.8 h1:dlkqn6Nj2LRWFuObNxttkMHxrFeaV6T26JR8jbEVbPg=
@@ -195,8 +193,8 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/segmentio/kafka-go v0.4.50 h1:mcyC3tT5WeyWzrFbd6O374t+hmcu1NKt2Pu1L3QaXmc=
 github.com/segmentio/kafka-go v0.4.50/go.mod h1:Y1gn60kzLEEaW28YshXyk2+VCUKbJ3Qr6DrnT3i4+9E=
-github.com/sllt/pi v0.5.0 h1:HOvffmthDnfHO7O+bsx9xEP+3dQ/7IRDmhAlLb2nX48=
-github.com/sllt/pi v0.5.0/go.mod h1:WJ27DwbKDkCfzs8qKhEDTeAmVSvZG9hJYJJr5Puyp/M=
+github.com/sllt/pi v0.5.1 h1:6pSIw0dNj7mqKxFWKajgjvsLWYOSUDiz7n8UrYiyQ34=
+github.com/sllt/pi v0.5.1/go.mod h1:WJ27DwbKDkCfzs8qKhEDTeAmVSvZG9hJYJJr5Puyp/M=
 github.com/sllt/tao/actor v0.3.0 h1:2E/bOZR079cTLePdkRoHVTl7SMAitu18+X9bZC79Zio=
 github.com/sllt/tao/actor v0.3.0/go.mod h1:ILRSQhkkeLdQFC322N3KGgOYw5BdEam2/WSE25w/24I=
 github.com/sllt/tao/taonet v0.3.0 h1:A2A1xfR5BZ+o0kaHiHE+7S1zbCAU57a7zO0WHXUX5J0=
