@@ -1,99 +1,48 @@
 # Pi Layout
 
-### v0.5.0 类型化路由、OpenAPI 3.0.3 与受监督任务
+[![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.0-blue)](https://github.com/sllt/pi)
 
-- **泛型 Typed Handler 与装配期契约校验**：`internal/router` 与 `internal/handler` 升级为 `pi.POST` / `pi.GET` / `pi.PUT` 泛型类型化路由，DTO 统一声明 `json` 与 `validate` 标签，`NewHTTPServer` 在构造阶段通过 `app.RouteError()` 拒绝无效路由或契约配置。
-- **零 `swag` 依赖的 OpenAPI 3.0.3 与离线 Scalar UI**：新增 `cmd/openapi` 从真实路由表直接生成 `docs/openapi.json` 与 `docs/openapi.yaml`（`make openapi` / `make check-generated`）；通过 `OPENAPI_ENABLED=true` 可按需开启在线契约与内置离线 Scalar API 文档页面（`/.well-known/swagger`）。
-- **内置受监督 Cron 调度**：移除外部 `gocron` 依赖，`cmd/task` 直接使用 Pi 受监督 Cron（`CronSkipIfRunning` 防重入、UTC 调度与停机优雅排空）。
+English | [简体中文](./README.zh-CN.md)
 
-### v0.4.1 业务契约升级
+**Pi Layout** is the official production-grade Go application scaffold for the [Pi](https://github.com/sllt/pi) framework. It combines Uber [Fx](https://github.com/uber-go/fx) dependency injection with Pi's explicit `pi.Build` runtime, strongly-typed HTTP contracts, OpenAPI 3.0.3 generation, gRPC adapters, lock-protected migrations, and actor-supervised Cron tasks.
 
-- 身份统一为 Pi Principal。HTTP 本人资料取已验证主体，跨用户 query 被拒绝；gRPC 的 user_id 仍经 service 授权，普通用户不能访问他人。可信任务可显式授予 `users:read:any` / `users:write:any`，模板 JWT 不颁发这些权限。
-- service 对内部 types 统一校验：邮箱、密码 8–72 字节、昵称最多 64 字符/256 字节。HTTP/protobuf 只负责解码与转换，所有入口共用业务规则。
-- 注册返回 201，登录/读取返回 200，资料修改返回 204 且没有正文。邮箱唯一冲突为 HTTP 409 / gRPC AlreadyExists，业务码仍为 1001。`pkg/errcode.Error` 改为 `apperror.Error`，使用 Kind/Code/PublicMessage/WithCause/Details，不再依赖旧 BizCode/Message 字段或 StatusCode 方法。
-- Repository 业务事务改用 `BeginTxContext`，保留原 Transaction 接口，具体 Repository 另提供 TransactionWithOptions。自定义 DB 需实现该可选能力；不再静默退回无法取消的 Begin。嵌套调用加入已有事务；任何嵌套错误、panic、跨库尝试或选项变更都使外层只能回滚。提交失败不自动重试。
-- 资料只写 email/nickname，改密单独调用 UpdatePassword，不把旧整行对象回写。RowsAffected=0 会在相同 context/事务检查记录是否仍存在；SQLite 默认单连接，连接池等待可取消。
+---
 
-自定义 UserRepository 实现与 mock 需补齐 UpdateEmail/UpdatePassword；NewHTTPServer 现在返回装配错误，应交给 Fx 或显式检查。
+## Features
 
-SQLite 的并发注册、改密/资料交错、删除竞争、事务取消/panic/commit 失败，以及 service/HTTP/gRPC 授权矩阵均有测试。此矩阵不代表业务 SQL 已跨方言。
+- **Clean Layered Architecture** — Strict separation across `API DTO / Proto → Handler → Service → Repository → Model`, sharing domain validation and authorization rules across HTTP, gRPC, and background tasks.
+- **Explicit Fx + `pi.Build` Lifecycle** — Fx constructors allocate side-effect-free handles; `OnStart` activates managed SQL and Pi runtime components, while `OnStop` drains in-flight work before releasing resources in reverse order.
+- **Typed HTTP Contracts & OpenAPI 3.0.3** — Routes use generic `pi.Register` and `pi.Meta` DTOs with pre-flight validation (`app.RouteError()`). `cmd/openapi` exports deterministic `docs/openapi.json` and `docs/openapi.yaml` without `swag` comments, and `OPENAPI_ENABLED=true` serves live specs plus the built-in offline Scalar UI (`/.well-known/swagger`).
+- **Unified Identity & Authorization** — Verified `Bearer` JWT tokens (`HS256` with `iss`, `aud`, `exp`, and matching `sub`) establish a `pi/auth.Principal` at the transport edge; services enforce self-or-permission checks (`users:read:any`, `users:write:any`).
+- **Safe SQL Transactions & One-Shot Migrations** — Repositories compose transactions via `BeginTxContext` with nested save/rollback safety. `cmd/migration` runs lock-protected schema plans and upgrades (`up`, `plan`, `status`, `--dry-run`) without starting HTTP/gRPC listeners.
+- **Supervised Cron Tasks** — `cmd/task` schedules jobs on Pi's built-in actor-supervised Cron runtime (`CronSkipIfRunning` overlap protection in `time.UTC`) with graceful shutdown draining.
+- **Reproducible Codegen & Containerization** — `make generator` compiles staged protobuf, gRPC wrapper, mock, and OpenAPI outputs before publishing; the root `Dockerfile` builds a minimal non-root (`UID 10001`) multi-binary image (`server`, `task`, `migration`).
 
-### v0.4.0 运行时装配
+---
 
-`internal/bootstrap` 使用 `pi.Build` 和配置快照，Fx 构造期只分配稳定 SQL 句柄；Fx OnStart 激活数据库和 Pi，
-OnStop 释放资源。启动 Hook 的 deadline 不会取消长期 Worker，运行错误通过 Pi Wait 传给宿主。
-server 的 signal 由命令入口管理，task 由 Fx 管理；迁移命令使用相同 Build/Owned SQL 清理契约，禁用全部监听器。
-默认指标监听关闭，按需在 bootstrap 显式配置每个 App 的 exporter 和 handler。
+## Quick Start
 
-Handler 测试使用公开 `pkg/pi/testkit`，可直接调用 Handler 或完整路由，无需端口或私有字段。
-旧 `pi.New()` 仍可使用，但新的业务装配统一走 Build；不要重新在 provider 中调用 NewSQL 或自行重复 Close。
-
-基于 [Pi](https://github.com/sllt/pi) 框架的企业级 Go 应用脚手架（项目骨架）。
-
-项目由 `kite-layout` 更名而来，框架版本固定在 `go.mod`。普通项目无需本地框架源码：
-
-```sh
-GOWORK=off go mod download
-GOWORK=off go build ./...
-```
-
-开发框架本身时可自行使用忽略提交的 go.work；发布验收使用 `GOWORK=off`。
-
-### 可重复生成与运行（v0.3.2）
-
-使用 Go 1.27.0 验收（最低版本见 go.mod）；`make init` 安装固定版本的 Pi、mockgen、Air 和 protobuf 插件到项目 `.tools/bin`，生成另需 protoc 33.1。
-`make generator` 在临时目录生成、格式化并编译，再交付 proto/wrapper/mock/OpenAPI（`docs/openapi.json`、`docs/openapi.yaml`）；保留手写的 `userservice_server.go`。`make check-generated` 只检查差异。
-`make unit`、`make race`、`make integration`、`make smoke`、`make container` 分别提供验证入口。Smoke 使用临时 SQLite、真实二进制 PID 和精确业务断言，退出时释放进程。
-
-本地配置不再跟踪：复制 `configs/.env.example` 到 `configs/.env`，设置随机 JWT 密钥；默认业务后端为 SQLite，运行前创建 `storage`。Compose 的 MySQL/Redis 通过 `--profile mysql` / `--profile redis` 显式启用，不能直接替代 SQLite 业务 SQL。
-根目录 Dockerfile 固定 Go 1.27.0，构建不运行 tidy，镜像包含 `server` / `task` / `migration` 三个入口，以 UID 10001 运行并包含 CA。运行时通过环境变量或只读配置挂载传入配置，`/app/storage` 需要可写；镜像不包含本地 .env、数据库和日志。已验证 Linux amd64；其他平台需在目标架构运行相同验收。
-
-升级旧客户端时注意：v0.3.2 的注册 202/登录 201/修改 200 已在 v0.4.1 改为 201/200/204；204 不再解析 JSON。
-
-## 特性
-
-- **分层架构** - Handler → Service → Repository → Model
-- **依赖注入** - 使用 [Fx](https://github.com/uber-go/fx) 管理依赖图与入口装配
-- **数据库支持** - 基于 Pi 的 SQL 抽象，支持事务
-- **JWT 认证** - 全局解析令牌 + 受保护路由强制鉴权
-- **定时任务** - 基于 Pi 内置受监督 Cron 调度（支持重入保护与优雅停机排空）
-- **数据库迁移** - 内置迁移入口
-- **可观测性** - 集成 OpenTelemetry 与 Prometheus
-
-## 目录概览
-
-- `cmd/server`：HTTP 服务入口（gRPC 用户示例默认不注册）
-- `cmd/openapi`：OpenAPI 3.0.3 文档离线导出入口（输出 `docs/openapi.json` / `docs/openapi.yaml`）
-- `cmd/migration`：数据库迁移入口
-- `cmd/task`：定时任务入口
-- `internal/handler`：接口层（协议适配）
-- `internal/service`：业务逻辑层
-- `internal/repository`：数据访问层
-- `internal/router`：路由与鉴权包装
-- `internal/server`：HTTP / task 的运行时注册；`internal/migrationcmd`：一次性迁移命令
-- `internal/bootstrap`：Fx modules 与基础构造函数
-- `docs`：生成的 OpenAPI 3.0.3 规范文件（`openapi.json` / `openapi.yaml`）
-- `pkg/config`：环境配置约定
-
-## 快速开始
-
-### 1) 准备配置
+### Option A: Scaffold a New Project via `pi` CLI (Recommended)
 
 ```bash
+go install github.com/sllt/pi/cmd/pi@v0.5.0
+pi init --module example.com/acme/orders ./orders
+cd ./orders
+```
+
+### Option B: Run Directly from This Repository
+
+#### 1. Prepare Configuration
+
+```bash
+mkdir -p storage
 cp configs/.env.example configs/.env
 ```
 
-然后修改 `configs/.env` 中的关键项（至少包括 `JWT_SECRET`）。
+Edit `configs/.env` and set a strong `JWT_SECRET` (at least 32 bytes; example placeholder values are rejected at startup).
 
-> 注意：`configs/.env` 已被 `.gitignore` 忽略，不应提交真实密钥。
-
-### 2) 初始化依赖工具（可选）
-
-```bash
-make init
-```
-
-### 3) 执行数据库迁移
+#### 2. Run Database Migrations
 
 ```bash
 go run ./cmd/migration plan
@@ -101,105 +50,79 @@ go run ./cmd/migration up --timeout=10m --lock-ttl=15m
 go run ./cmd/migration status
 ```
 
-`up` 是默认子命令，默认开启迁移锁；显式 `--lock=false` 才关闭。
-支持 `--target=<version>`、`up --dry-run`、`--config-dir=configs`。输出单条 JSON 摘要到 stdout，
-日志到 stderr；错误、取消、超时、gap 均返回非零退出码。plan/status 不取得执行锁，可能创建状态表。
-锁无自动续租，`--lock-ttl` 必须大于 `--timeout`，迁移函数必须配合 context 取消。
+> The bundled `users` and `user_profiles` DDL targets SQLite (`storage/app.db`) out of the box. When switching business SQL to PostgreSQL or MySQL, update the SQL migrations and dialect guard accordingly.
 
-随项目提供的 users/user_profiles DDL 仅支持 SQLite，命令会拒绝其他方言；
-切换 MySQL/PostgreSQL 时应先修改业务 DDL 与此方言检查。Pi 框架自身支持这些迁移后端。
-
-如需新增迁移模板：
-
-```bash
-pi migrate create add_users_index
-```
-
-### 4) 启动服务
+#### 3. Start the HTTP Server
 
 ```bash
 go run ./cmd/server
-# 或使用 nunu
-nunu run ./cmd/server
 ```
 
-### 5) 启动任务调度
+To enable live OpenAPI 3.0.3 endpoints (`/.well-known/openapi.json`, `/.well-known/openapi.yaml`) and the built-in offline Scalar UI (`/.well-known/swagger`), set `OPENAPI_ENABLED=true` in `configs/.env` or your environment.
+
+#### 4. Start the Scheduled Task Runner (Optional)
 
 ```bash
 go run ./cmd/task
 ```
 
-## 常用命令
+---
 
-```bash
-make test     # 运行测试并生成覆盖率报告
-make build    # 构建 server / task / migration / openapi 二进制
-make openapi  # 生成 docs/openapi.json 与 docs/openapi.yaml（保留 make swag 别名）
-make bootstrap
+## Project Structure
+
+```text
+pi-layout/
+├── api/
+│   ├── proto/user/          # Protobuf definitions & generated gRPC stubs
+│   └── v1/                  # Typed HTTP request/response DTOs (pi.Meta)
+├── cmd/
+│   ├── migration/           # One-shot database migration CLI entrypoint
+│   ├── openapi/             # Offline OpenAPI 3.0.3 exporter & drift checker
+│   ├── server/              # HTTP (and optional gRPC) service entrypoint
+│   └── task/                # Supervised Cron worker entrypoint
+├── configs/                 # .env.example template (configs/.env is gitignored)
+├── deploy/docker-compose/   # Optional local MySQL / Redis compose profiles
+├── docs/                    # Generated openapi.json & openapi.yaml artifacts
+├── internal/
+│   ├── bootstrap/           # Fx modules, Pi Build wiring & OpenAPI config
+│   ├── grpc/user/           # Generated Pi gRPC wrappers + handwritten server adapter
+│   ├── handler/             # HTTP transport adapters
+│   ├── middleware/          # JWT Principal extraction middleware
+│   ├── migrationcmd/        # Lock-protected migration command runner
+│   ├── model/               # Persistence models
+│   ├── repository/          # SQL data access & transaction management
+│   ├── router/              # Route groups, auth middleware & OpenAPI doc tags
+│   ├── server/              # HTTP, gRPC & Cron server registration
+│   ├── service/             # Domain logic, validation & Principal authorization
+│   ├── task/                # Scheduled background job implementations
+│   └── types/               # Transport-neutral domain DTOs
+├── migrations/              # Versioned SQL migrations
+├── pkg/                     # Shared packages (config, errcode, jwt, log, sid)
+├── scripts/                 # Reproducible codegen, smoke test & container checks
+└── test/                    # Integration tests & generated mocks
 ```
 
-`make bootstrap` 会启动 docker-compose、执行迁移并运行服务。
+---
 
-## 配置约定
+## Configuration & Security Highlights
 
-- Pi 默认从项目根目录下的 `./configs/.env` 读取配置
-- 本地开发先复制 `configs/.env.example` 到 `configs/.env`
-- **密钥管理建议**：
-  - 本地开发：放 `configs/.env`（不提交）
-  - CI/CD：放平台 Secret
-  - 生产环境：使用环境变量或密钥管理系统注入
+- **JWT Authentication** — Credentials are accepted strictly from `Authorization: Bearer <token>`. Configure `JWT_SECRET` (≥ 32 bytes), `JWT_TTL` (default `1h`), `JWT_ISSUER` (default `pi-layout`), and `JWT_AUDIENCE` (default `pi-api`).
+- **CORS & TLS** — Cross-origin access is disabled by default; set comma-separated `CORS_ALLOWED_ORIGINS` when needed. Configure `CERT_FILE` / `KEY_FILE` (HTTP) and `GRPC_CERT_FILE` / `GRPC_KEY_FILE` (gRPC) for TLS; invalid key pairs fail fast instead of falling back to plaintext.
+- **gRPC Service Gate** — The sample gRPC `UserService` is disabled by default and only registers when both `GRPC_ENABLED=true` and `USER_GRPC_ENABLED=true` are set.
+- **Error Envelopes** — `pkg/errcode.Error` aliases Pi's `apperror.Error`, mapping domain error kinds consistently across HTTP JSON responses, gRPC status codes, and CLI exit codes.
 
-## 生命周期约定
+---
 
-### v0.3.1 升级
-
-JWT 只从 `Authorization: Bearer <token>` 接受凭证，cookie/query/raw token 不再被识别。
-新 token 要求 HS256、有效 exp、配置的 issuer/audience 和一致的 subject/userId。
-`JWT_SECRET` 至少 32 字节且不能是示例值；`JWT_TTL` 默认 1h，`JWT_ISSUER` 默认 pi-layout，`JWT_AUDIENCE` 默认 pi-api。
-旧版缺少这些 claims 的 token 从本版起失效，升级服务后客户端需重新登录；不提供无截止日期的宽松解析兼容开关。
-`jwt.NewJwt` 现在返回 `(*JWT, error)`，Fx 会展示配置错误；自定义构造代码需处理 error，业务发 token 使用 `Issue(userID)`。
-
-CORS 已集中到 Pi 框架，layout 不再叠加反射 Origin 的 middleware；需要跨域时设置 `CORS_ALLOWED_ORIGINS`。
-端口可用 `HTTP_ADDR=127.0.0.1:0` 申请随机端口，`*_ENABLED=false` 明确禁用；TLS 配置错误不会回落明文。
-
-- `cmd/server` 使用 Fx 负责依赖装配，启动后通过 `piApp.RunContext(ctx)` 交给 Pi 管理 HTTP/gRPC/metrics 生命周期。
-- `cmd/server` 自己创建 signal context，避免 Fx `Run()` 和 Pi `Run()` 双重接管 OS signal。
-- Fx Hook 启动/关闭 Build app；RunContext 等待运行结果和进程取消，启动预算与运行期 context 分离。
-- `cmd/migration` 是一次性入口，通过 `run(ctx) error` 传递失败，仅打开所需 SQL 连接；每次执行均关闭连接，不启动 HTTP/gRPC/metrics。
-- `cmd/task` 由 Fx 管理进程，通过 `app.AddCron` 注册到 Pi 内置受监督 Cron（`CronSkipIfRunning` 防重入，`time.UTC`），`Start` 后才开始触发，在途任务退出后才释放 SQL。
-
-## 鉴权策略
-
-- 全局中间件使用 `NoStrictAuth`：有 token 就解析 claims，无 token 不拦截。
-- 需要登录的路由在 `internal/router` 使用 `RouteGroup.UseMiddleware(...)` 做分组强制鉴权。
-
-### gRPC 用户示例的状态
-
-默认保持关闭。明确设置 `GRPC_ENABLED=true` 与 `USER_GRPC_ENABLED=true` 才注册安全的 UserService；
-注册/登录公开，资料 unary RPC 使用已验证 Bearer Principal，service 再做资源授权；流式扩展可复用相同 Principal interceptor。
-`GRPC_ADDR` 控制地址，`GRPC_CERT_FILE` / `GRPC_KEY_FILE` 配置 TLS。仅设置端口不会启用业务服务。
-`userservice_server.go` 为手写 adapter，`pi wrap grpc server` 保留它；其余 wrapper 由模板生成。
-
-## 业务模块开发
-
-当前 `user` 模块已经演示：
-
-- API DTO、domain types、model、repository、service、handler、router 的分层边界；
-- 注册用户时在一个事务内同时创建账号记录和用户资料记录；
-- 更新资料时在一个事务内同时更新账号邮箱和资料昵称。
-
-Handler / Service 直接返回 `pkg/errcode`，`net/http` middleware 使用 `errcode.WriteHTTPError`，避免重复手写 JSON 响应。
-
-## 测试
+## Common Commands
 
 ```bash
-make test
+make init            # Install pinned pi, mockgen, air, and protoc plugins into .tools/bin
+make build           # Build server, task, migration, and openapi binaries into ./bin
+make test            # Run all unit and integration tests
+make race            # Run all tests with -race enabled
+make openapi         # Regenerate docs/openapi.json and docs/openapi.yaml
+make generator       # Regenerate protobufs, gRPC wrappers, mocks, and OpenAPI specs safely
+make check-generated # Verify zero drift in generated files
+make smoke           # End-to-end binary smoke test (migration, auth, status codes, SIGTERM)
+make container       # Build and verify the multi-entrypoint container image
 ```
-
-接口冒烟测试（会自动执行迁移、启动服务并验证核心用户接口）：
-
-```bash
-bash scripts/smoke.sh
-```
-
-当前包含 service/repository 测试；handler 测试依赖 Pi 的集成测试上下文。
