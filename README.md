@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.1-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.2-blue)](https://github.com/sllt/pi)
 
 English | [简体中文](./README.zh-CN.md)
 
@@ -26,21 +26,24 @@ English | [简体中文](./README.zh-CN.md)
 ### Option A: Scaffold a New Project via `pi` CLI (Recommended)
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.1
+go install github.com/sllt/pi/cmd/pi@v0.5.2
 pi init --module example.com/acme/orders ./orders
 cd ./orders
+go run ./cmd/migration up
+go run ./cmd/server
 ```
+
+`pi init` automatically creates `storage/` and generates a local `configs/.env` (`0600`) with a cryptographically random 64-char hex `JWT_SECRET`.
 
 ### Option B: Run Directly from This Repository
 
 #### 1. Prepare Configuration
 
 ```bash
-mkdir -p storage
-cp configs/.env.example configs/.env
+make env
 ```
 
-Edit `configs/.env` and set a strong `JWT_SECRET` (at least 32 bytes; example placeholder values are rejected at startup).
+`make env` copies `configs/.env.example` to `configs/.env` and populates a random 64-char hex `JWT_SECRET` (you can also generate one manually via `openssl rand -hex 32`; placeholder values are rejected at startup).
 
 #### 2. Run Database Migrations
 
@@ -58,7 +61,7 @@ go run ./cmd/migration status
 go run ./cmd/server
 ```
 
-To enable live OpenAPI 3.0.3 endpoints (`/.well-known/openapi.json`, `/.well-known/openapi.yaml`) and the built-in offline Scalar UI (`/.well-known/swagger`), set `OPENAPI_SERVE_SPEC=true` and `OPENAPI_SERVE_UI=true` in `configs/.env` or your environment.
+Local `configs/.env.example` enables live OpenAPI 3.0.3 endpoints (`/.well-known/openapi.json`) and the built-in offline Scalar UI (`/.well-known/swagger`) out of the box, printing the clickable Swagger UI URL on startup (when unset in production environments, both default to `false`).
 
 #### 4. Start the Scheduled Task Runner (Optional)
 
@@ -117,6 +120,7 @@ pi-layout/
 
 ```bash
 make init            # Install pinned pi, mockgen, air, and protoc plugins into .tools/bin
+make env             # Generate local configs/.env with a random 64-char hex JWT_SECRET
 make build           # Build server, task, migration, and openapi binaries into ./bin
 make test            # Run all unit and integration tests
 make race            # Run all tests with -race enabled

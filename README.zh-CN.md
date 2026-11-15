@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.1-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.2-blue)](https://github.com/sllt/pi)
 
 [English](./README.md) | 简体中文
 
@@ -26,21 +26,24 @@
 ### 方式一：通过 `pi` CLI 初始化新项目（推荐）
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.1
+go install github.com/sllt/pi/cmd/pi@v0.5.2
 pi init --module example.com/acme/orders ./orders
 cd ./orders
+go run ./cmd/migration up
+go run ./cmd/server
 ```
+
+`pi init` 会自带 `storage/` 目录，并自动由配置模板生成本地 `configs/.env`（权限 `0600`）与随机 64 位十六进制 `JWT_SECRET`，开箱即用。
 
 ### 方式二：直接运行本仓库
 
 #### 1. 准备配置文件
 
 ```bash
-mkdir -p storage
-cp configs/.env.example configs/.env
+make env
 ```
 
-编辑 `configs/.env`，将 `JWT_SECRET` 修改为至少 32 字节的随机密钥（启动时会拒绝默认示例值）。
+`make env` 会基于 `configs/.env.example` 自动生成本地 `configs/.env` 并填入随机 64 位十六进制 `JWT_SECRET`（也可手动通过 `openssl rand -hex 32` 生成；启动时会拒绝默认占位符）。
 
 #### 2. 执行数据库迁移
 
@@ -58,7 +61,7 @@ go run ./cmd/migration status
 go run ./cmd/server
 ```
 
-如需开启在线 OpenAPI 3.0.3 规范端点（`/.well-known/openapi.json`、`/.well-known/openapi.yaml`）与内置离线 Scalar 文档页（`/.well-known/swagger`），可在环境变量或 `configs/.env` 中设置 `OPENAPI_SERVE_SPEC=true` 与 `OPENAPI_SERVE_UI=true`。
+本地 `configs/.env.example` 默认开启在线 OpenAPI 3.0.3 规范端点（`/.well-known/openapi.json`）与内置离线 Scalar 文档界面（`/.well-known/swagger`），并在启动时自动打印可点击的 Swagger UI 链接（未显式设置该环境变量的生产部署默认关闭）。
 
 #### 4. 启动定时任务进程（可选）
 
@@ -117,6 +120,7 @@ pi-layout/
 
 ```bash
 make init            # 安装固定版本的 pi、mockgen、air 与 protoc 插件到 .tools/bin
+make env             # 自动生成带随机 64 位十六进制 JWT_SECRET 的本地 configs/.env
 make build           # 编译 server、task、migration、openapi 四个二进制到 ./bin
 make test            # 运行全部单元与集成测试
 make race            # 开启 -race 竞态检测运行全部测试

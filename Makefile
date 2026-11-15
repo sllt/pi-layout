@@ -1,9 +1,9 @@
 GO ?= go
-PI_VERSION ?= v0.5.1
+PI_VERSION ?= v0.5.2
 TOOLS := $(CURDIR)/.tools/bin
 export PATH := $(TOOLS):$(PATH)
 
-.PHONY: init bootstrap build unit test race integration generator check-generated smoke container mock openapi swag
+.PHONY: init env bootstrap build unit test race integration generator check-generated smoke container mock openapi swag
 init:
 	mkdir -p $(TOOLS)
 	GOBIN=$(TOOLS) $(GO) install github.com/golang/mock/mockgen@v1.6.0
@@ -12,7 +12,16 @@ init:
 	GOBIN=$(TOOLS) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	GOBIN=$(TOOLS) $(GO) install github.com/sllt/pi/cmd/pi@$(PI_VERSION)
 
-bootstrap:
+env:
+	@if [ ! -f configs/.env ]; then \
+		secret=$$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n'); \
+		sed "s|^JWT_SECRET=.*|JWT_SECRET=$$secret|" configs/.env.example > configs/.env && chmod 600 configs/.env; \
+		echo "Generated configs/.env with a random JWT_SECRET"; \
+	else \
+		echo "configs/.env already exists, skipping"; \
+	fi
+
+bootstrap: env
 	mkdir -p storage
 	$(GO) run ./cmd/migration up
 	air

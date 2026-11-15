@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +11,7 @@ import (
 	"github.com/sllt/pi-layout/internal/bootstrap"
 	"github.com/sllt/pi-layout/internal/server"
 	"github.com/sllt/pi/pkg/pi"
+	"github.com/sllt/pi/pkg/pi/logging"
 	"go.uber.org/fx"
 )
 
@@ -30,7 +30,8 @@ func stopFXApp(app fxStopper, timeout time.Duration) error {
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatalf("server error: %v", err)
+		logging.NewLogger(logging.ERROR).Errorf("server error: %v", err)
+		os.Exit(1)
 	}
 }
 

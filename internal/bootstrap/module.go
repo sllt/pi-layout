@@ -10,14 +10,18 @@ import (
 	"go.uber.org/fx"
 )
 
-// CoreModule provides app/container level dependencies shared by all entry points.
-var CoreModule = fx.Module("core",
-	fx.Provide(
-		NewPiApp,
-		NewLogger,
-		NewDB,
+// CoreModule provides app/container level dependencies shared by all entry points
+// and unifies Fx lifecycle logs with Pi's logger format.
+var CoreModule = fx.Options(
+	fx.WithLogger(NewFxLogger),
+	fx.Module("core",
+		fx.Provide(
+			NewPiApp,
+			NewLogger,
+			NewDB,
+		),
+		fx.Invoke(RegisterRuntime),
 	),
-	fx.Invoke(RegisterRuntime),
 )
 
 // RepositoryModule provides repository-layer dependencies.
