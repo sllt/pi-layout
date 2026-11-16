@@ -7,7 +7,7 @@ require (
 	github.com/duke-git/lancet/v2 v2.3.8
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang/mock v1.6.0
-	github.com/sllt/pi v0.5.2
+	github.com/sllt/pi v0.5.3
 	github.com/sony/sonyflake v1.3.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/fx v1.24.0

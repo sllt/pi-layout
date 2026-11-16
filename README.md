@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.2-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.3-blue)](https://github.com/sllt/pi)
 
 English | [简体中文](./README.zh-CN.md)
 
@@ -13,7 +13,7 @@ English | [简体中文](./README.zh-CN.md)
 
 - **Clean Layered Architecture** — Strict separation across `API DTO / Proto → Handler → Service → Repository → Model`, sharing domain validation and authorization rules across HTTP, gRPC, and background tasks.
 - **Explicit Fx + `pi.Build` Microkernel Lifecycle** — Fx constructors extract side-effect-free `sql.Client` (`app.SQL()`) and `app.Logger()` handles; `OnStart` activates managed SQL and any mounted adapters (`pi.WithAdapter` / `pi.Use[T]`), while `OnStop` drains in-flight work before releasing resources in reverse order.
-- **Typed HTTP Contracts & OpenAPI 3.0.3** — Routes use generic `pi.Register` and `pi.Meta` DTOs with pre-flight validation (`app.RouteError()`). `cmd/openapi` exports deterministic `docs/openapi.json` and `docs/openapi.yaml` without `swag` comments, and `OPENAPI_SERVE_SPEC=true` / `OPENAPI_SERVE_UI=true` serve live specs plus the built-in offline Scalar UI (`/.well-known/swagger`).
+- **Typed HTTP Contracts & OpenAPI 3.0.3** — Routes register typed handlers directly on `GET`/`POST`/`PUT`/`PATCH`/`DELETE` (with `Scope()` sub-groups and optional `pi.Meta` annotations) and pre-flight validation (`app.RouteError()`). `cmd/openapi` exports deterministic `docs/openapi.json` and `docs/openapi.yaml` without `swag` comments, and `OPENAPI_SERVE_SPEC=true` / `OPENAPI_SERVE_UI=true` serve live specs plus the built-in offline Scalar UI (`/.well-known/swagger`).
 - **Unified Identity & Authorization** — Verified `Bearer` JWT tokens (`HS256` with `iss`, `aud`, `exp`, and matching `sub`) establish a `pi/auth.Principal` at the transport edge; services enforce self-or-permission checks (`users:read:any`, `users:write:any`).
 - **Safe SQL Transactions & One-Shot Migrations** — Repositories compose transactions via `sql.Client.BeginTxContext` and verify ownership via `sql.Client.Owns` with nested rollback-only safety. `cmd/migration` runs lock-protected schema plans and upgrades (`app.MigrateContext` / `app.MigrationPlanContext` / `app.MigrationStatusContext`) without starting HTTP/gRPC listeners.
 - **Supervised Cron Tasks** — `cmd/task` schedules jobs on Pi's built-in actor-supervised Cron runtime (`CronSkipIfRunning` overlap protection in `time.UTC`) with graceful shutdown draining.
@@ -26,14 +26,14 @@ English | [简体中文](./README.zh-CN.md)
 ### Option A: Scaffold a New Project via `pi` CLI (Recommended)
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.2
+go install github.com/sllt/pi/cmd/pi@v0.5.3
 pi init --module example.com/acme/orders ./orders
 cd ./orders
 go run ./cmd/migration up
 go run ./cmd/server
 ```
 
-`pi init` automatically creates `storage/` and generates a local `configs/.env` (`0600`) with a cryptographically random 64-char hex `JWT_SECRET`.
+`pi init` automatically creates `storage/` and generates a local `configs/.env` (`0600`) with a cryptographically random 64-char hex `JWT_SECRET` (pass `--skip-verify` to skip initial `go mod download` and `go build` verification for instant scaffolding).
 
 ### Option B: Run Directly from This Repository
 

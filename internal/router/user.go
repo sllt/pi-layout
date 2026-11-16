@@ -25,21 +25,13 @@ func InitUserRouter(deps RouterDeps) error {
 	apiV1 := deps.App.Group("/api/v1").WithDoc(pi.DocTags("用户模块"))
 
 	// No authentication required
-	if err := pi.Register(apiV1, deps.UserHandler.Register); err != nil {
-		return err
-	}
-	if err := pi.Register(apiV1, deps.UserHandler.Login); err != nil {
-		return err
-	}
+	apiV1.POST("/register", deps.UserHandler.Register)
+	apiV1.POST("/login", deps.UserHandler.Login)
 
 	// Token required
 	userGroup := apiV1.Group("/user").UseMiddleware(requireAuthMiddleware()).WithDoc(pi.DocSecurity("Bearer"))
-	if err := pi.Register(userGroup, deps.UserHandler.GetProfile); err != nil {
-		return err
-	}
-	if err := pi.Register(userGroup, deps.UserHandler.UpdateProfile); err != nil {
-		return err
-	}
+	userGroup.GET("", deps.UserHandler.GetProfile)
+	userGroup.PUT("", deps.UserHandler.UpdateProfile)
 
 	return deps.App.RouteError()
 }

@@ -193,8 +193,8 @@ github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0t
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/segmentio/kafka-go v0.4.50 h1:mcyC3tT5WeyWzrFbd6O374t+hmcu1NKt2Pu1L3QaXmc=
 github.com/segmentio/kafka-go v0.4.50/go.mod h1:Y1gn60kzLEEaW28YshXyk2+VCUKbJ3Qr6DrnT3i4+9E=
-github.com/sllt/pi v0.5.2 h1:SHJJykqhbE4LomEnPGIxTl10u7VgjB4u1EqIp/OSmmc=
-github.com/sllt/pi v0.5.2/go.mod h1:WJ27DwbKDkCfzs8qKhEDTeAmVSvZG9hJYJJr5Puyp/M=
+github.com/sllt/pi v0.5.3 h1:9VGiODvIhgjkBjvh5fDsyLVUHqCsej+KTchF/0MVKWk=
+github.com/sllt/pi v0.5.3/go.mod h1:WJ27DwbKDkCfzs8qKhEDTeAmVSvZG9hJYJJr5Puyp/M=
 github.com/sllt/tao/actor v0.3.0 h1:2E/bOZR079cTLePdkRoHVTl7SMAitu18+X9bZC79Zio=
 github.com/sllt/tao/actor v0.3.0/go.mod h1:ILRSQhkkeLdQFC322N3KGgOYw5BdEam2/WSE25w/24I=
 github.com/sllt/tao/taonet v0.3.0 h1:A2A1xfR5BZ+o0kaHiHE+7S1zbCAU57a7zO0WHXUX5J0=
