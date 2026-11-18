@@ -20,7 +20,7 @@ func (s Sid) GenString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return IntToBase62(int(id)), nil
+	return Uint64ToBase62(id), nil
 }
 func (s Sid) GenUint64() (uint64, error) {
 	return s.sf.NextID()

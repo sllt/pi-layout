@@ -16,8 +16,8 @@ import (
 //   - App.Stop cancels in-flight task contexts and waits for task exit before closing Owned SQL.
 func RegisterTaskServer(app *pi.App, logger *log.Logger, userTask task.UserTask) error {
 	return app.AddCron("0/3 * * * * *", "check-user", func(ctx *pi.Context) error {
-		if err := userTask.CheckUser(ctx.Context); err != nil {
-			logger.Errorf("CheckUser error: %v", err)
+		if err := userTask.CheckUser(ctx); err != nil {
+			logger.WithContext(ctx).Errorf("CheckUser error: %v", err)
 			return err
 		}
 		return nil

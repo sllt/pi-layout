@@ -4,21 +4,25 @@ const (
 	base62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 )
 
-func IntToBase62(n int) string {
+func Uint64ToBase62(n uint64) string {
 	if n == 0 {
 		return string(base62[0])
 	}
 
-	var result []byte
+	var buf [11]byte
+	i := len(buf)
 	for n > 0 {
-		result = append(result, base62[n%62])
+		i--
+		buf[i] = base62[n%62]
 		n /= 62
 	}
 
-	// 反转字符串
-	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
-		result[i], result[j] = result[j], result[i]
-	}
+	return string(buf[i:])
+}
 
-	return string(result)
+func IntToBase62(n int) string {
+	if n <= 0 {
+		return string(base62[0])
+	}
+	return Uint64ToBase62(uint64(n))
 }

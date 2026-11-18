@@ -1,15 +1,15 @@
 package router
 
 import (
-	"github.com/sllt/pi-layout/internal/handler"
 	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi/pkg/pi"
+	"github.com/sllt/pi/pkg/pi/auth"
 )
 
 func requireAuthMiddleware() pi.PiMiddleware {
 	return func(next pi.Handler) pi.Handler {
 		return func(ctx *pi.Context) (any, error) {
-			if handler.GetUserIdFromCtx(ctx) == "" {
+			if _, err := auth.Require(ctx); err != nil {
 				return nil, errcode.ErrUnauthorized
 			}
 			return next(ctx)

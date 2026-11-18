@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/sllt/pi-layout/migrations"
 )
 
 func TestCommandSQLiteLifecycle(t *testing.T) {
+	total := len(migrations.All())
 	dir := t.TempDir()
 	t.Setenv("DB_DIALECT", "sqlite")
 	t.Setenv("DB_NAME", filepath.Join(dir, "app.db"))
@@ -31,25 +34,25 @@ func TestCommandSQLiteLifecycle(t *testing.T) {
 		}
 		return s
 	}
-	if s := call("plan"); len(s.Plan) != 2 || s.LockEnabled {
+	if s := call("plan"); len(s.Plan) != total || s.LockEnabled {
 		t.Fatalf("unexpected plan: %+v", s)
 	}
-	if s := call("up", "--dry-run"); len(s.Skipped) != 2 || len(s.Applied) != 0 || !s.LockEnabled {
+	if s := call("up", "--dry-run"); len(s.Skipped) != total || len(s.Applied) != 0 || !s.LockEnabled {
 		t.Fatalf("unexpected dry-run: %+v", s)
 	}
-	if s := call("status"); len(s.Pending) != 2 || len(s.Applied) != 0 {
+	if s := call("status"); len(s.Pending) != total || len(s.Applied) != 0 {
 		t.Fatalf("dry-run changed state: %+v", s)
 	}
-	if s := call("up", "--target=20260206104000"); len(s.Applied) != 1 || len(s.Skipped) != 1 {
+	if s := call("up", "--target=20260206104000"); len(s.Applied) != 1 || len(s.Skipped) != total-1 {
 		t.Fatalf("unexpected target: %+v", s)
 	}
-	if s := call("up"); len(s.Applied) != 1 {
+	if s := call("up"); len(s.Applied) != total-1 {
 		t.Fatalf("unexpected apply: %+v", s)
 	}
-	if s := call("up"); len(s.Applied) != 0 || len(s.Skipped) != 2 {
+	if s := call("up"); len(s.Applied) != 0 || len(s.Skipped) != total {
 		t.Fatalf("repeat ran migrations: %+v", s)
 	}
-	if s := call("status"); len(s.Applied) != 2 || len(s.Pending) != 0 || !s.StatePrecise {
+	if s := call("status"); len(s.Applied) != total || len(s.Pending) != 0 || !s.StatePrecise {
 		t.Fatalf("unexpected status: %+v", s)
 	}
 	if s := call("up", "--lock=false"); s.LockEnabled {

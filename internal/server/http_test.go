@@ -16,6 +16,7 @@ import (
 	"github.com/sllt/pi-layout/internal/handler"
 	"github.com/sllt/pi-layout/internal/router"
 	"github.com/sllt/pi-layout/internal/types"
+	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi-layout/pkg/jwt"
 	"github.com/sllt/pi-layout/pkg/log"
 	mockservice "github.com/sllt/pi-layout/test/mocks/service"
@@ -63,6 +64,7 @@ func TestHTTPServer_DefaultUserBoundary(t *testing.T) {
 	users.EXPECT().Login(gomock.Any(), &types.LoginInput{
 		Email: "a@example.com", Password: "test-password",
 	}).Return(&types.LoginOutput{AccessToken: token}, nil)
+	users.EXPECT().GetProfile(gomock.Any(), "user-b").Return(nil, errcode.ErrForbidden)
 	users.EXPECT().GetProfile(gomock.Any(), "user-a").Return(&types.UserOutput{
 		UserId: "user-a", Nickname: "Alice",
 	}, nil)

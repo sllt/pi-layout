@@ -18,16 +18,28 @@ const ClaimsKey contextKey = "claims"
 func StrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if j == nil {
+				if logger != nil {
+					logger.Warn("jwt service is nil")
+				}
+				errcode.WriteHTTPError(w, r, errcode.ErrUnauthorized)
+				return
+			}
+
 			tokenString := bearerToken(r)
 			if tokenString == "" {
-				logger.Warn("missing bearer token")
+				if logger != nil {
+					logger.Warn("missing bearer token")
+				}
 				errcode.WriteHTTPError(w, r, errcode.ErrUnauthorized)
 				return
 			}
 
 			claims, err := j.ParseToken(tokenString)
 			if err != nil {
-				logger.Warn("invalid bearer token")
+				if logger != nil {
+					logger.Warn("invalid bearer token")
+				}
 				errcode.WriteHTTPError(w, r, errcode.ErrUnauthorized)
 				return
 			}
@@ -42,6 +54,11 @@ func StrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler 
 func NoStrictAuth(j *jwt.JWT, logger *log.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if j == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			tokenString := bearerToken(r)
 			if tokenString == "" {
 				next.ServeHTTP(w, r)

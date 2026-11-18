@@ -42,10 +42,18 @@ func run() error {
 	return runWithContext(ctx)
 }
 
-func runWithContext(ctx context.Context) (err error) {
+func runWithContext(ctx context.Context) error {
+	return runWithOptions(ctx)
+}
+
+func runWithOptions(ctx context.Context, extraOpts ...fx.Option) (err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	var piApp *pi.App
 
-	fxApp := fx.New(
+	opts := []fx.Option{
 		bootstrap.CoreModule,
 		bootstrap.InfraModule,
 		bootstrap.RepositoryModule,
@@ -53,7 +61,10 @@ func runWithContext(ctx context.Context) (err error) {
 		bootstrap.HandlerModule,
 		fx.Invoke(server.NewHTTPServer),
 		fx.Populate(&piApp),
-	)
+	}
+	opts = append(opts, extraOpts...)
+
+	fxApp := fx.New(opts...)
 
 	startCtx, cancel := context.WithTimeout(context.Background(), fxLifecycleTimeout)
 	defer cancel()
@@ -71,5 +82,13 @@ func runWithContext(ctx context.Context) (err error) {
 		return errors.New("pi app was not populated")
 	}
 
-	return piApp.RunContext(ctx)
+	select {
+	case <-ctx.Done():
+		return nil
+	case sig := <-fxApp.Wait():
+		if sig.ExitCode != 0 {
+			return piApp.Wait(context.Background())
+		}
+		return nil
+	}
 }

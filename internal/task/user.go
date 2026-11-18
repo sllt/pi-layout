@@ -26,6 +26,6 @@ type userTask struct {
 
 func (t userTask) CheckUser(ctx context.Context) error {
 	// do something
-	t.logger.Info("CheckUser")
+	t.logger.WithContext(ctx).Info("CheckUser")
 	return nil
 }

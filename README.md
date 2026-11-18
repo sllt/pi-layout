@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.3-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.4-blue)](https://github.com/sllt/pi)
 
 English | [简体中文](./README.zh-CN.md)
 
@@ -26,7 +26,7 @@ English | [简体中文](./README.zh-CN.md)
 ### Option A: Scaffold a New Project via `pi` CLI (Recommended)
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.3
+go install github.com/sllt/pi/cmd/pi@v0.5.4
 pi init --module example.com/acme/orders ./orders
 cd ./orders
 go run ./cmd/migration up

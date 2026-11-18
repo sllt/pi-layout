@@ -7,9 +7,10 @@ require (
 	github.com/duke-git/lancet/v2 v2.3.8
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/golang/mock v1.6.0
-	github.com/sllt/pi v0.5.3
+	github.com/sllt/pi v0.5.4
 	github.com/sony/sonyflake v1.3.0
 	github.com/stretchr/testify v1.11.1
+	go.opentelemetry.io/otel/trace v1.39.0
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.47.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260122232226-8e98ce8d340d
@@ -92,7 +93,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.39.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.39.0 // indirect
-	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/mock v0.6.0 // indirect

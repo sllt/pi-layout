@@ -4,7 +4,6 @@ import (
 	v1 "github.com/sllt/pi-layout/api/v1"
 	"github.com/sllt/pi-layout/internal/service"
 	"github.com/sllt/pi-layout/internal/types"
-	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi/pkg/pi"
 )
 
@@ -28,7 +27,7 @@ func (h *UserHandler) Register(ctx *pi.Context, req *v1.RegisterRequest) (*v1.Re
 
 	if err := h.userService.Register(ctx, input); err != nil {
 		if h.Handler != nil && h.logger != nil {
-			h.logger.Errorf("userService.Register error: %v", err)
+			h.logger.WithContext(ctx).Errorf("userService.Register error: %v", err)
 		}
 		return nil, err
 	}
@@ -53,12 +52,12 @@ func (h *UserHandler) Login(ctx *pi.Context, req *v1.LoginRequest) (*v1.LoginRes
 }
 
 func (h *UserHandler) GetProfile(ctx *pi.Context, req *v1.GetProfileRequest) (*v1.GetProfileResponseData, error) {
-	userId := GetUserIdFromCtx(ctx)
-	if req.UserId != "" && req.UserId != userId {
-		return nil, errcode.ErrForbidden
+	targetID := req.UserId
+	if targetID == "" {
+		targetID = GetUserIdFromCtx(ctx)
 	}
 
-	output, err := h.userService.GetProfile(ctx, userId)
+	output, err := h.userService.GetProfile(ctx, targetID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +69,9 @@ func (h *UserHandler) GetProfile(ctx *pi.Context, req *v1.GetProfileRequest) (*v
 }
 
 func (h *UserHandler) UpdateProfile(ctx *pi.Context, req *v1.UpdateProfileRequest) (*v1.UpdateProfileResponse, error) {
-	userId := GetUserIdFromCtx(ctx)
-	if req.UserId != "" && req.UserId != userId {
-		return nil, errcode.ErrForbidden
+	targetID := req.UserId
+	if targetID == "" {
+		targetID = GetUserIdFromCtx(ctx)
 	}
 
 	input := &types.UpdateProfileInput{
@@ -80,7 +79,7 @@ func (h *UserHandler) UpdateProfile(ctx *pi.Context, req *v1.UpdateProfileReques
 		Email:    req.Email,
 	}
 
-	if err := h.userService.UpdateProfile(ctx, userId, input); err != nil {
+	if err := h.userService.UpdateProfile(ctx, targetID, input); err != nil {
 		return nil, err
 	}
 

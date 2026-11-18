@@ -116,7 +116,7 @@ func (r *Repository) TransactionWithOptions(ctx context.Context, opts *sql.TxOpt
 	defer func() {
 		if p := recover(); p != nil {
 			if rbErr := rollback(); rbErr != nil && r.logger != nil {
-				r.logger.Errorf("rollback after panic: %v", rbErr)
+				r.logger.WithContext(ctx).Errorf("rollback after panic: %v", rbErr)
 			}
 			panic(p)
 		}
