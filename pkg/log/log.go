@@ -28,3 +28,28 @@ func (l *Logger) WithContext(ctx context.Context) *logging.ContextLogger {
 	}
 	return logging.WithContext(ctx, l.Logger)
 }
+
+// Debugw logs a debug message with structured key-value fields.
+func (l *Logger) Debugw(msg string, kv ...any) {
+	l.WithContext(context.Background()).WithCallerSkip(1).Debugw(msg, kv...)
+}
+
+// Infow logs an info message with structured key-value fields.
+func (l *Logger) Infow(msg string, kv ...any) {
+	l.WithContext(context.Background()).WithCallerSkip(1).Infow(msg, kv...)
+}
+
+// Warnw logs a warning message with structured key-value fields.
+func (l *Logger) Warnw(msg string, kv ...any) {
+	l.WithContext(context.Background()).WithCallerSkip(1).Warnw(msg, kv...)
+}
+
+// Errorw logs an error message with structured key-value fields.
+func (l *Logger) Errorw(msg string, kv ...any) {
+	l.WithContext(context.Background()).WithCallerSkip(1).Errorw(msg, kv...)
+}
+
+// With returns an immutable ContextLogger copy with pre-bound key-value fields.
+func (l *Logger) With(kv ...any) *logging.ContextLogger {
+	return l.WithContext(context.Background()).With(kv...)
+}

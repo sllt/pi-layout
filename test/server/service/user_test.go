@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/sllt/pi-layout/internal/model"
 	"github.com/sllt/pi-layout/internal/service"
 	"github.com/sllt/pi-layout/internal/types"
@@ -18,6 +17,7 @@ import (
 	"github.com/sllt/pi/pkg/pi/auth"
 	"github.com/sllt/pi/pkg/pi/logging"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
 )
 

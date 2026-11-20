@@ -1,13 +1,14 @@
 package middleware
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/sllt/pi-layout/pkg/errcode"
 )
 
@@ -93,5 +94,6 @@ func TestSignMiddleware_ValidSignaturePassesThrough(t *testing.T) {
 
 func signForTest(appKey, timestamp, nonce, appVersion, secret string) string {
 	base := "AppKey" + appKey + "AppVersion" + appVersion + "Nonce" + nonce + "Timestamp" + timestamp + secret
-	return strings.ToUpper(cryptor.Md5String(base))
+	sum := md5.Sum([]byte(base))
+	return strings.ToUpper(hex.EncodeToString(sum[:]))
 }

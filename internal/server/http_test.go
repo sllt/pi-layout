@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/sllt/pi-layout/internal/handler"
 	"github.com/sllt/pi-layout/internal/router"
 	"github.com/sllt/pi-layout/internal/types"
@@ -22,6 +21,7 @@ import (
 	mockservice "github.com/sllt/pi-layout/test/mocks/service"
 	"github.com/sllt/pi/pkg/pi"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestHTTPServer_DefaultUserBoundary(t *testing.T) {

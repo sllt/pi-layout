@@ -1,12 +1,12 @@
 GO ?= go
-PI_VERSION ?= v0.5.4
+PI_VERSION ?= v0.5.5
 TOOLS := $(CURDIR)/.tools/bin
 export PATH := $(TOOLS):$(PATH)
 
 .PHONY: init env bootstrap build unit test race integration generator check-generated smoke container mock openapi swag
 init:
 	mkdir -p $(TOOLS)
-	GOBIN=$(TOOLS) $(GO) install github.com/golang/mock/mockgen@v1.6.0
+	GOBIN=$(TOOLS) $(GO) install go.uber.org/mock/mockgen@v0.6.0
 	GOBIN=$(TOOLS) $(GO) install github.com/air-verse/air@v1.61.7
 	GOBIN=$(TOOLS) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	GOBIN=$(TOOLS) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0

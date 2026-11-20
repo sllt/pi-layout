@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/sllt/pi-layout/internal/handler"
 	"github.com/sllt/pi-layout/internal/types"
 	mockservice "github.com/sllt/pi-layout/test/mocks/service"
 	"github.com/sllt/pi/pkg/pi"
 	"github.com/sllt/pi/pkg/pi/testkit"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestLoginThroughPublicTestkit(t *testing.T) {

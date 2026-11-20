@@ -1,7 +1,7 @@
 # Pi Layout
 
 [![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?logo=go)](https://go.dev/)
-[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.4-blue)](https://github.com/sllt/pi)
+[![Pi Framework](https://img.shields.io/badge/Pi-v0.5.5-blue)](https://github.com/sllt/pi)
 
 [English](./README.md) | 简体中文
 
@@ -26,7 +26,7 @@
 ### 方式一：通过 `pi` CLI 初始化新项目（推荐）
 
 ```bash
-go install github.com/sllt/pi/cmd/pi@v0.5.4
+go install github.com/sllt/pi/cmd/pi@v0.5.5
 pi init --module example.com/acme/orders ./orders
 cd ./orders
 go run ./cmd/migration up

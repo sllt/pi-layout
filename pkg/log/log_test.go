@@ -69,3 +69,56 @@ func TestLoggerWithContext_NilAndZeroSafety(t *testing.T) {
 		noopWrapped.WithContext(spanCtx).Infof("nil base logger with context safe: %d", 3)
 	})
 }
+
+func TestLogger_StructuredMethodsAndWith(t *testing.T) {
+	var buf bytes.Buffer
+	l := NewLogger(logging.NewWriterLogger(logging.DEBUG, &buf, &buf))
+
+	l.Debugw("dbg", "k1", "v1")
+	l.Infow("info", "k2", 2)
+	l.Warnw("warn", "k3", true)
+	l.Errorw("err", "k4", "boom")
+	l.With("component", "auth").Infow("login", "user_id", 42)
+
+	out := buf.String()
+	assert.Contains(t, out, `"message":"dbg"`)
+	assert.Contains(t, out, `"k1":"v1"`)
+	assert.Contains(t, out, `"message":"info"`)
+	assert.Contains(t, out, `"k2":2`)
+	assert.Contains(t, out, `"message":"warn"`)
+	assert.Contains(t, out, `"k3":true`)
+	assert.Contains(t, out, `"message":"err"`)
+	assert.Contains(t, out, `"k4":"boom"`)
+	assert.Contains(t, out, `"component":"auth"`)
+	assert.Contains(t, out, `"user_id":42`)
+
+	var nilLogger *Logger
+	require.NotPanics(t, func() {
+		nilLogger.Debugw("d", "a", 1)
+		nilLogger.Infow("i", "a", 1)
+		nilLogger.Warnw("w", "a", 1)
+		nilLogger.Errorw("e", "a", 1)
+		nilLogger.With("a", 1).Infow("x")
+	})
+
+	t.Run("SetShowCaller attributes Infow to caller instead of log.go", func(t *testing.T) {
+		var callerBuf bytes.Buffer
+		base := logging.NewWriterLogger(logging.DEBUG, &callerBuf, &callerBuf)
+		if cc, ok := base.(logging.CallerConfigurer); ok {
+			cc.SetShowCaller(true)
+		}
+		wrapped := NewLogger(base)
+		wrapped.Infow("caller check", "k", "v")
+
+		var entry struct {
+			Caller  string         `json:"caller"`
+			Message string         `json:"message"`
+			Fields  map[string]any `json:"fields"`
+		}
+		require.NoError(t, json.Unmarshal(bytes.TrimSpace(callerBuf.Bytes()), &entry))
+		assert.Equal(t, "caller check", entry.Message)
+		assert.Equal(t, "v", entry.Fields["k"])
+		assert.Contains(t, entry.Caller, "log_test.go:")
+		assert.NotContains(t, entry.Caller, "pkg/log/log.go:")
+	})
+}

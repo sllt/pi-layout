@@ -3,11 +3,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="$ROOT/.tools/bin:$PATH"
 PI="${PI:-pi}"
-[[ "$("$PI" --version)" == "pi version ${PI_VERSION:-v0.5.4}" ]] || { echo 'Pi generator version mismatch' >&2; exit 1; }
+[[ "$("$PI" --version)" == "pi version ${PI_VERSION:-v0.5.5}" ]] || { echo 'Pi generator version mismatch' >&2; exit 1; }
 [[ "$(protoc --version)" == 'libprotoc 33.1' ]] || { echo 'protoc 33.1 required' >&2; exit 1; }
 [[ "$(protoc-gen-go --version)" == 'protoc-gen-go v1.28.0' ]] || exit 1
 [[ "$(protoc-gen-go-grpc --version)" == 'protoc-gen-go-grpc 1.2.0' ]] || exit 1
-[[ "$(mockgen -version)" == 'v1.6.0' ]] || exit 1
+[[ "$(mockgen -version)" == *v0.6.0* ]] || exit 1
 STAGE="$(mktemp -d "${TMPDIR:-/tmp}/pi-generate.XXXXXX")"
 VERIFY="$(mktemp -d "${TMPDIR:-/tmp}/pi-generate-check.XXXXXX")"
 trap 'rm -rf "$STAGE" "$VERIFY"' EXIT

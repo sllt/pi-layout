@@ -1,12 +1,13 @@
 package middleware
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 
-	"github.com/duke-git/lancet/v2/cryptor"
 	"github.com/sllt/pi-layout/pkg/errcode"
 	"github.com/sllt/pi-layout/pkg/log"
 )
@@ -49,7 +50,9 @@ func SignMiddleware(logger *log.Logger) func(http.Handler) http.Handler {
 			}
 			str += appSecret
 
-			if r.Header.Get("Sign") != strings.ToUpper(cryptor.Md5String(str)) {
+			sum := md5.Sum([]byte(str))
+			expectedSign := strings.ToUpper(hex.EncodeToString(sum[:]))
+			if r.Header.Get("Sign") != expectedSign {
 				if logger != nil {
 					logger.Warnf("invalid signature url=%s", r.URL)
 				}
